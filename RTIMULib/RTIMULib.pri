@@ -69,6 +69,7 @@ SOURCES += $$PWD/RTMath.cpp \
     $$PWD/IMUDrivers/RTIMU.cpp \
     $$PWD/IMUDrivers/RTIMUMPU9150.cpp \
     $$PWD/IMUDrivers/RTIMUMPU9250.cpp \
+    $$PWD/IMUDrivers/RTIMUICM20948.cpp \
     $$PWD/IMUDrivers/RTIMUGD20HM303D.cpp \
     $$PWD/IMUDrivers/RTIMUGD20M303DLHC.cpp \
     $$PWD/IMUDrivers/RTIMUGD20HM303DLHC.cpp \

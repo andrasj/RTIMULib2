@@ -29,6 +29,7 @@
 #include "RTIMUNull.h"
 #include "RTIMUMPU9150.h"
 #include "RTIMUMPU9250.h"
+#include "RTIMUICM20948.h"
 #include "RTIMUGD20HM303D.h"
 #include "RTIMUGD20M303DLHC.h"
 #include "RTIMUGD20HM303DLHC.h"
@@ -36,6 +37,7 @@
 #include "RTIMULSM9DS1.h"
 #include "RTIMUBMX055.h"
 #include "RTIMUBNO055.h"
+#include "RTIMUICM20948.h"
 
 //  this sets the learning rate for compass running average calculation
 
@@ -106,6 +108,9 @@ RTIMU *RTIMU::createIMU(RTIMUSettings *settings)
 
     case RTIMU_TYPE_MPU9250:
         return new RTIMUMPU9250(settings);
+
+    case RTIMU_TYPE_ICM20948:
+        return new RTIMUICM20948(settings);
 
     case RTIMU_TYPE_GD20HM303DLHC:
         return new RTIMUGD20HM303DLHC(settings);

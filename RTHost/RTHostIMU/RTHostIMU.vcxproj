@@ -83,6 +83,7 @@
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMULSM9DS1.cpp" />
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUMPU9150.cpp" />
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUMPU9250.cpp" />
+    <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUICM20948.cpp" />
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUNull.cpp" />
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTPressure.cpp" />
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTPressureBMP180.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMULSM9DS1.h" />
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUMPU9150.h" />
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUMPU9250.h" />
+    <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUICM20948.h" />
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUNull.h" />
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTPressure.h" />
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTPressureBMP180.h" />

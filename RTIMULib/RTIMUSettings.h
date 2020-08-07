@@ -21,7 +21,7 @@
 //  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//  The MPU-9250 and SPI driver code is based on code generously supplied by
+//  The MPU-9250/ICM-20948 and SPI driver code is based on code generously supplied by
 //  staslock@gmail.com (www.clickdrive.io)
 
 #ifndef _RTIMUSETTINGS_H
@@ -62,6 +62,15 @@
 #define RTIMULIB_MPU9250_ACCEL_LPF          "MPU9250AccelLpf"
 #define RTIMULIB_MPU9250_GYRO_FSR           "MPU9250GyroFSR"
 #define RTIMULIB_MPU9250_ACCEL_FSR          "MPU9250AccelFSR"
+
+//  ICM20948 settings keys
+
+#define RTIMULIB_ICM20948_GYROACCEL_SAMPLERATE "ICM20948GyroAccelSampleRate"
+#define RTIMULIB_ICM20948_COMPASS_SAMPLERATE   "ICM20948CompassSampleRate"
+#define RTIMULIB_ICM20948_GYRO_LPF             "ICM20948GyroLpf"
+#define RTIMULIB_ICM20948_ACCEL_LPF            "ICM20948AccelLpf"
+#define RTIMULIB_ICM20948_GYRO_FSR             "ICM20948GyroFSR"
+#define RTIMULIB_ICM20948_ACCEL_FSR            "ICM20948AccelFSR"
 
 //  GD20HM303D settings keys
 
@@ -272,6 +281,15 @@ public:
     int m_MPU9250AccelLpf;                                  // low pass filter code for the accel
     int m_MPU9250GyroFsr;                                   // FSR code for the gyro
     int m_MPU9250AccelFsr;                                  // FSR code for the accel
+
+    //  ICM20948
+
+    int m_ICM20948GyroAccelSampleRate;                       // the sample rate (samples per second) for gyro and accel
+    int m_ICM20948CompassSampleRate;                         // same for the compass
+    int m_ICM20948GyroLpf;                                   // low pass filter code for the gyro
+    int m_ICM20948AccelLpf;                                  // low pass filter code for the accel
+    int m_ICM20948GyroFsr;                                   // FSR code for the gyro
+    int m_ICM20948AccelFsr;                                  // FSR code for the accel
 
     //  GD20HM303D
 

@@ -25,53 +25,46 @@
 //  staslock@gmail.com (www.clickdrive.io)
 
 
-#ifndef _RTIMUMPU9250_H
-#define	_RTIMUMPU9250_H
+#ifndef _RTIMUICM20948_H
+#define	_RTIMUICM20948_H
 
 #include "RTIMU.h"
 
 //  Define this symbol to use cache mode
 
-#define MPU9250_CACHE_MODE
+#define ICM20948_CACHE_MODE
 
 //  FIFO transfer size
 
-#define MPU9250_FIFO_CHUNK_SIZE     12                      // gyro and accels take 12 bytes
+#define ICM20948_FIFO_CHUNK_SIZE     12                      // gyro and accels take 12 bytes
 
-#ifdef MPU9250_CACHE_MODE
+#ifdef ICM20948_CACHE_MODE
 
 //  Cache mode defines
 
-#define MPU9250_CACHE_SIZE          16                      // number of chunks in a block
-#define MPU9250_CACHE_BLOCK_COUNT   16                      // number of cache blocks
+#define ICM20948_CACHE_SIZE          16                      // number of chunks in a block
+#define ICM20948_CACHE_BLOCK_COUNT   16                      // number of cache blocks
 
 typedef struct
 {
-    unsigned char data[MPU9250_FIFO_CHUNK_SIZE * MPU9250_CACHE_SIZE];
+    unsigned char data[ICM20948_FIFO_CHUNK_SIZE * ICM20948_CACHE_SIZE];
     int count;                                              // number of chunks in the cache block
     int index;                                              // current index into the cache
     unsigned char compass[8];                               // the raw compass readings for the block
 
-} MPU9250_CACHE_BLOCK;
+} ICM20948_CACHE_BLOCK;
 
 #endif
 
 
-class RTIMUMPU9250 : public RTIMU
+class RTIMUICM20948 : public RTIMU
 {
 public:
-    RTIMUMPU9250(RTIMUSettings *settings);
-    ~RTIMUMPU9250();
-private:
-    bool setGyroLpf(unsigned char lpf);
-    bool setAccelLpf(unsigned char lpf);
-    bool setSampleRate(int rate);
-    bool setCompassRate(int rate);
-    bool setGyroFsr(unsigned char fsr);
-    bool setAccelFsr(unsigned char fsr);
-public:
-    virtual const char *IMUName() { return "MPU-9250"; }
-    virtual int IMUType() { return RTIMU_TYPE_MPU9250; }
+    RTIMUICM20948(RTIMUSettings *settings);
+    ~RTIMUICM20948();
+
+    virtual const char *IMUName() { return "ICM-20948"; }
+    virtual int IMUType() { return RTIMU_TYPE_ICM20948; }
     virtual bool IMUInit();
     virtual bool IMURead();
     virtual int IMUGetPollInterval();
@@ -81,18 +74,22 @@ protected:
     RTFLOAT m_compassAdjust[3];                             // the compass fuse ROM values converted for use
 
 private:
+    bool setGyroLpf(unsigned char lpf);
+    bool setAccelLpf(unsigned char lpf);
+    bool setSampleRate(int rate);
+    bool setCompassRate(int rate);
+    bool setGyroFsr(unsigned char fsr);
+    bool setAccelFsr(unsigned char fsr);
+    bool resetFifo();
     bool setGyroConfig();
     bool setAccelConfig();
     bool setSampleRate();
-    bool compassSetup();
-    bool setCompassRate();
-    bool resetFifo();
-    bool bypassOn();
-    bool bypassOff();
+
+private:
 
     bool m_firstTime;                                       // if first sample
 
-    unsigned char m_slaveAddr;                              // I2C address of MPU9150
+    unsigned char m_slaveAddr;                              // I2C address of ICM20948
 
     unsigned char m_gyroLpf;                                // gyro low pass filter setting
     unsigned char m_accelLpf;                               // accel low pass filter setting
@@ -104,9 +101,9 @@ private:
     RTFLOAT m_accelScale;
 
 
-#ifdef MPU9250_CACHE_MODE
+#ifdef ICM20948_CACHE_MODE
 
-    MPU9250_CACHE_BLOCK m_cache[MPU9250_CACHE_BLOCK_COUNT]; // the cache itself
+    ICM20948_CACHE_BLOCK m_cache[ICM20948_CACHE_BLOCK_COUNT]; // the cache itself
     int m_cacheIn;                                          // the in index
     int m_cacheOut;                                         // the out index
     int m_cacheCount;                                       // number of used cache blocks
@@ -115,4 +112,4 @@ private:
 
 };
 
-#endif // _RTIMUMPU9250_H
+#endif // _RTIMUICM20948_H

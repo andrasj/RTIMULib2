@@ -21,13 +21,14 @@
 //  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//  The MPU-9250 and SPI driver code is based on code generously supplied by
+//  The MPU-9250/ICM-20948 and SPI driver code is based on code generously supplied by
 //  staslock@gmail.com (www.clickdrive.io)
 
 
 #include "RTIMUSettings.h"
 #include "IMUDrivers/RTIMUMPU9150.h"
 #include "IMUDrivers/RTIMUMPU9250.h"
+#include "IMUDrivers/RTIMUICM20948.h"
 #include "IMUDrivers/RTIMUGD20HM303D.h"
 #include "IMUDrivers/RTIMUGD20M303DLHC.h"
 #include "IMUDrivers/RTIMUGD20HM303DLHC.h"
@@ -513,7 +514,16 @@ void RTIMUSettings::setDefaults()
     m_MPU9250GyroFsr = MPU9250_GYROFSR_1000;
     m_MPU9250AccelFsr = MPU9250_ACCELFSR_8;
 
-    //  GD20HM303D defaults
+    //  ICM20948 defaults
+
+    m_ICM20948GyroAccelSampleRate = 80;
+    m_ICM20948CompassSampleRate = 40;
+    m_ICM20948GyroLpf = ICM20648_GYRO_LPF_24HZ;
+    m_ICM20948AccelLpf = ICM20648_ACCEL_LPF_24HZ;
+    m_ICM20948GyroFsr = ICM20648_GYRO_FULLSCALE_1000DPS;
+    m_ICM20948AccelFsr = ICM20648_ACCEL_FULLSCALE_8G;
+
+   //  GD20HM303D defaults
 
     m_GD20HM303DGyroSampleRate = L3GD20H_SAMPLERATE_50;
     m_GD20HM303DGyroBW = L3GD20H_BANDWIDTH_1;
@@ -780,6 +790,21 @@ bool RTIMUSettings::loadSettings()
         } else if (strcmp(key, RTIMULIB_MPU9250_ACCEL_FSR) == 0) {
             m_MPU9250AccelFsr = atoi(val);
 
+        //  ICM20948 settings
+
+        } else if (strcmp(key, RTIMULIB_ICM20948_GYROACCEL_SAMPLERATE) == 0) {
+            m_ICM20948GyroAccelSampleRate = atoi(val);
+        } else if (strcmp(key, RTIMULIB_ICM20948_COMPASS_SAMPLERATE) == 0) {
+            m_ICM20948CompassSampleRate = atoi(val);
+        } else if (strcmp(key, RTIMULIB_ICM20948_GYRO_LPF) == 0) {
+            m_ICM20948GyroLpf = atoi(val);
+        } else if (strcmp(key, RTIMULIB_ICM20948_ACCEL_LPF) == 0) {
+            m_ICM20948AccelLpf = atoi(val);
+        } else if (strcmp(key, RTIMULIB_ICM20948_GYRO_FSR) == 0) {
+            m_ICM20948GyroFsr = atoi(val);
+        } else if (strcmp(key, RTIMULIB_ICM20948_ACCEL_FSR) == 0) {
+            m_ICM20948AccelFsr = atoi(val);
+
         //  GD20HM303D settings
 
         } else if (strcmp(key, RTIMULIB_GD20HM303D_GYRO_SAMPLERATE) == 0) {
@@ -934,6 +959,7 @@ bool RTIMUSettings::saveSettings()
     setComment("  8 = STM L3GD20H + LSM303DLHC");
     setComment("  9 = Bosch BMX055");
     setComment("  10 = Bosch BNX055");
+    setComment("  11 = InvenSense ICM20948");
     setValue(RTIMULIB_IMU_TYPE, m_imuType);
 
     setBlank();
@@ -1193,6 +1219,68 @@ bool RTIMUSettings::saveSettings()
     setComment("  16 - +/- 8g");
     setComment("  24 - +/- 16g");
     setValue(RTIMULIB_MPU9250_ACCEL_FSR, m_MPU9250AccelFsr);
+
+    //  ICM-20948 settings
+
+    setBlank();
+    setComment("#####################################################################");
+    setComment("");
+    setComment("ICM-20948 settings");
+    setComment("");
+
+    setBlank();
+    setComment("Gyro sample rate (between 5Hz and 1000Hz plus 8000Hz and 32000Hz) ");
+    setValue(RTIMULIB_ICM20948_GYROACCEL_SAMPLERATE, m_ICM20948GyroAccelSampleRate);
+
+    setBlank();
+    setComment("");
+    setComment("Compass sample rate (between 1Hz and 100Hz) ");
+    setValue(RTIMULIB_ICM20948_COMPASS_SAMPLERATE, m_ICM20948CompassSampleRate);
+
+    setBlank();
+    setComment("");
+    setComment("Gyro low pass filter - ");
+    setComment("  0x11 - 8800Hz, 0.64mS delay");
+    setComment("  0x10 - 3600Hz, 0.11mS delay");
+    setComment("  0x00 - 250Hz, 0.97mS delay");
+    setComment("  0x01 - 184Hz, 2.9mS delay");
+    setComment("  0x02 - 92Hz, 3.9mS delay");
+    setComment("  0x03 - 41Hz, 5.9mS delay");
+    setComment("  0x04 - 20Hz, 9.9mS delay");
+    setComment("  0x05 - 10Hz, 17.85mS delay");
+    setComment("  0x06 - 5Hz, 33.48mS delay");
+    setValue(RTIMULIB_ICM20948_GYRO_LPF, m_ICM20948GyroLpf);
+
+    setBlank();
+    setComment("");
+    setComment("Accel low pass filter - ");
+    setComment("  0x08 - 1130Hz, 0.75mS delay");
+    setComment("  0x00 - 460Hz, 1.94mS delay");
+    setComment("  0x01 - 184Hz, 5.80mS delay");
+    setComment("  0x02 - 92Hz, 7.80mS delay");
+    setComment("  0x03 - 41Hz, 11.80mS delay");
+    setComment("  0x04 - 20Hz, 19.80mS delay");
+    setComment("  0x05 - 10Hz, 35.70mS delay");
+    setComment("  0x06 - 5Hz, 66.96mS delay");
+    setValue(RTIMULIB_ICM20948_ACCEL_LPF, m_ICM20948AccelLpf);
+
+    setBlank();
+    setComment("");
+    setComment("Gyro full scale range - ");
+    setComment("  0  - +/- 250 degress per second");
+    setComment("  8  - +/- 500 degress per second");
+    setComment("  16 - +/- 1000 degress per second");
+    setComment("  24 - +/- 2000 degress per second");
+    setValue(RTIMULIB_ICM20948_GYRO_FSR, m_ICM20948GyroFsr);
+
+    setBlank();
+    setComment("");
+    setComment("Accel full scale range - ");
+    setComment("  0  - +/- 2g");
+    setComment("  8  - +/- 4g");
+    setComment("  16 - +/- 8g");
+    setComment("  24 - +/- 16g");
+    setValue(RTIMULIB_ICM20948_ACCEL_FSR, m_ICM20948AccelFsr);
 
     //  GD20HM303D settings
 

@@ -212,6 +212,9 @@
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUMPU9250.cpp">
       <Filter>RTIMULib\IMUDrivers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUICM20948.cpp">
+      <Filter>RTIMULib\IMUDrivers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\RTIMULib\IMUDrivers\RTIMUNull.cpp">
       <Filter>RTIMULib\IMUDrivers</Filter>
     </ClCompile>
@@ -361,6 +364,9 @@
       <Filter>RTIMULib\IMUDrivers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUMPU9250.h">
+      <Filter>RTIMULib\IMUDrivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUICM20948.h">
       <Filter>RTIMULib\IMUDrivers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\RTIMULib\IMUDrivers\RTIMUNull.h">

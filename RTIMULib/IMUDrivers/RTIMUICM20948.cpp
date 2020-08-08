@@ -39,11 +39,8 @@ RTIMUICM20948::~RTIMUICM20948()
 
 bool RTIMUICM20948::SelectBank(unsigned char slaveAddr, unsigned short addr)
 {
-    uint8_t regAddr;
-    uint8_t bank;
-
-    regAddr = (uint8_t) (addr & 0x7F);
-    bank = (uint8_t) (addr >> 7);
+    uint8_t bank = (uint8_t) (addr >> 7);
+    // uint8_t regAddr = (uint8_t) (addr & 0x7F);
 
     // uint8_t curDevBank;
     // if (!m_settings->HALRead(slaveAddr, ICM20948_REG_BANK_SEL, 1,&curDevBank, "Failed to read Bank"))
@@ -80,7 +77,7 @@ bool RTIMUICM20948::HALWrite(unsigned char slaveAddr, unsigned short addr,
         return false;
     if (!m_settings->HALWrite(slaveAddr, addr & 0x7F, data, errorMsg))
         return false;
-    m_settings->delayMs(10);
+    // m_settings->delayMs(10);
     return true;
 }
 
@@ -91,7 +88,7 @@ bool RTIMUICM20948::HALWrite(unsigned char slaveAddr, unsigned short addr,
         return false;
     if (!m_settings->HALWrite(slaveAddr, addr & 0x7F, length, data, errorMsg))
         return false;
-    m_settings->delayMs(10);
+    // m_settings->delayMs(10);
     return true;
 }
 
@@ -115,11 +112,12 @@ bool RTIMUICM20948::foo_debug()
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV1_CTRL,  0, "Failed to disable SLV1")) return false;
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV2_CTRL,  0, "Failed to disable SLV2")) return false;
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV3_CTRL,  0, "Failed to disable SLV3")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV4_CTRL,  0, "Failed to disable SLV4")) return false;
     m_settings->delayMs(5);
 	// Set up the secondary I2C bus on 20630. (inv_icm20948_set_secondary)
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_MST_CTRL,  ICM20948_BIT_I2C_MST_P_NSR, "Failed to setup I2C")) return false;
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_MST_ODR_CONFIG,  ICM20948_MIN_MST_ODR_CONFIG, "Failed to setup I2C")) return false;
-    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
 
     m_settings->delayMs(50);
 
@@ -141,22 +139,28 @@ while (true)
     // // inv_icm20948_secondary_enable_i2c
     // HAL_INFO1("USER_CTRL: %Xh\n",curUsrCtrl);
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl | ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
-    m_settings->delayMs(50);
-    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl & (~ICM20948_BIT_I2C_MST_EN), "Failed to use SLV0")) return false;
-    m_settings->delayMs(10);
+    m_settings->delayMs(20);
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl & (~ICM20948_BIT_I2C_MST_EN), "Failed to use SLV0")) return false;
     if (!HALRead(m_slaveAddr,  ICM20948_REG_EXT_SLV_SENS_DATA_00,  1, &akId, "Failed to disable SLV0")) return false;
-    //if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  0, "Failed to disable SLV0")) return false;
     HAL_INFO1("AK company ID: %Xh\n",akId);
 
-
-    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_ADDR,  addr, "Failed to use SLV0")) return false;
+    akId=0;
+//    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_ADDR,  addr, "Failed to use SLV0")) return false;
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_REG,  REG_AK09916_WIA2, "Failed to use SLV0")) return false;
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to use SLV0")) return false;
-    m_settings->delayMs(100);
     // // inv_icm20948_secondary_enable_i2c
-    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl | ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
-    m_settings->delayMs(50);
-    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl & (~ICM20948_BIT_I2C_MST_EN), "Failed to use SLV0")) return false;
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl | ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
+    //m_settings->delayMs(10);
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl & (~ICM20948_BIT_I2C_MST_EN), "Failed to use SLV0")) return false;
+     for (size_t i = 0; i < 10; i++)
+     {
+         if (!HALRead(m_slaveAddr,  ICM20948_REG_EXT_SLV_SENS_DATA_00,  1, &akId, "Failed to disable SLV0")) return false;
+         HAL_INFO2("Reading incomming data, attempt: %d, value: %Xh\n",i+1,akId);
+         if (akId==0 || akId==0x48)
+             m_settings->delayMs(10);
+         else
+             break;
+     }
     if (!HALRead(m_slaveAddr,  ICM20948_REG_EXT_SLV_SENS_DATA_00,  1, &akId, "Failed to disable SLV0")) return false;
     HAL_INFO1("AK Dev ID: %Xh\n",akId);
 
@@ -523,7 +527,7 @@ bool RTIMUICM20948::IMURead()
     unsigned char fifoCount[2];
     unsigned int count;
     unsigned char fifoData[12];
-    unsigned char compassData[8];
+    unsigned char compassData[9];
 
     if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_COUNT_H, 2, fifoCount, "Failed to read fifo count"))
          return false;
@@ -547,7 +551,7 @@ bool RTIMUICM20948::IMURead()
         if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
             return false;
 
-        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 8, compassData, "Failed to read compass data"))
+        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compassData, "Failed to read compass data"))
              return false;
     } else {
         if (count >= (ICM20948_CACHE_SIZE * ICM20948_FIFO_CHUNK_SIZE)) {
@@ -617,7 +621,7 @@ bool RTIMUICM20948::IMURead()
     if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
         return false;
 
-    if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 8, compassData, "Failed to read compass data"))
+    if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compassData, "Failed to read compass data"))
         return false;
 
 #endif
@@ -709,31 +713,16 @@ bool RTIMUICM20948::compassSetup() {
         if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl"))
             return false;
   
-        m_settings->delayMs(10);
+        m_settings->delayMs(20);
         unsigned char wia;
         if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, len, &wia, "Failed to read WIA"))
             return false;
 
-        HAL_INFO1("WIA: %d\n",wia);
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_ADDR, AK09916_ADDRESS, "Failed to set slave 1 address"))
+        if (wia != AK09916_WIA2_ID)
+        {
+            HAL_ERROR2("Invalid magnetometer ID, expected %Xh but was %Xh\n",AK09916_WIA2_ID,wia);
             return false;
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_REG, REG_AK09916_CNTL2, "Failed to set slave 1 reg"))
-            return false;
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_CTRL, 0x81, "Failed to set slave 1 ctrl"))
-            return false;
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_DO, 0x00, "Failed to set compass in power down mode 2"))
-            return false;
-
-        m_settings->delayMs(10);
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_DO, 0x04, "Failed to set compass in mode 2"))
-            return false;
-
-        m_settings->delayMs(10);
+        }
 
     }
     //  both interfaces
@@ -742,16 +731,16 @@ bool RTIMUICM20948::compassSetup() {
     m_compassAdjust[1] = 1.0f;
     m_compassAdjust[2] = 1.0f;
 
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, 0x80 | AK09916_ADDRESS, "Failed to set slave 0 address"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address"))
         return false;
 
     if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_STATUS1, "Failed to set slave 0 reg"))
         return false;
 
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, 0x89, "Failed to set slave 0 ctrl"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | 9, "Failed to set slave 0 ctrl"))
         return false;
     
-    m_settings->delayMs(10);
+//    m_settings->delayMs(20);
 
     unsigned char compMeas[9];
     if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compMeas, "Failed to set slave 0 ctrl"))

@@ -72,6 +72,18 @@ public:
 protected:
 
     RTFLOAT m_compassAdjust[3];                             // the compass fuse ROM values converted for use
+private:
+    bool HALOpen() {return m_settings->HALOpen();}
+    void HALClose(){m_settings->HALClose();}
+    bool SelectBank(unsigned char slaveAddr, unsigned short addr); // ensures the correct bank is activated in ICM20948 before performing the real write
+    bool HALRead(unsigned char slaveAddr, unsigned short addr, unsigned char length,
+                 unsigned char *data, const char *errorMsg);    // normal read with register select
+    bool HALWrite(unsigned char slaveAddr, unsigned short addr,
+                  unsigned char length, unsigned char const *data, const char *errorMsg);
+    bool HALWrite(unsigned char slaveAddr, unsigned short addr,
+                  unsigned char const data, const char *errorMsg);
+    bool foo_debug();
+
 
 private:
     bool setGyroLpf(unsigned char lpf);
@@ -84,8 +96,14 @@ private:
     bool setGyroConfig();
     bool setAccelConfig();
     bool setSampleRate();
+    bool compassSetup();
+    bool setCompassRate();
+    bool bypassOn();
+    bool bypassOff();
+
 
 private:
+    uint8_t m_lastbank; //last set bank
 
     bool m_firstTime;                                       // if first sample
 

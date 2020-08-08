@@ -78,6 +78,10 @@ int main(int argc, char **argv)
     imu = NULL;
     newIMU();
 
+
+
+    return 0;
+
     //  set up for calibration run
 
     imu->setCompassCalibrationMode(true);

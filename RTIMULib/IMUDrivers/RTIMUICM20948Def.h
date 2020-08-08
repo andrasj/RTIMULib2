@@ -1,3 +1,28 @@
+/* AK09916 register definition - ICM20948 ondie magnetometer */
+#define AK0991x_DEFAULT_I2C_ADDR	0x0C	/* The default I2C address for AK0991x Magnetometers */
+#define AK0991x_SECONDARY_I2C_ADDR  0x0E	/* The secondary I2C address for AK0991x Magnetometers */
+
+#define AK09916_ADDRESS     AK0991x_DEFAULT_I2C_ADDR
+
+#define AK09916_WIA1_ID        0x48
+#define AK09916_WIA2_ID        0x09
+
+#define REG_AK09916_WIA1        0x0 
+#define REG_AK09916_WIA2        0x1
+#define REG_AK09916_DMP_READ    0x3
+#define REG_AK09916_STATUS1     0x10
+#define REG_AK09916_STATUS2     0x18
+#define REG_AK09916_CNTL2       0x31
+#define REG_AK09916_CNTL3       0x32
+#define REG_AK09916_MEASURE_DATA     0x11
+#define REG_AK09916_TEST        0x33
+
+
+
+/* ICM20948 */
+
+#define ICM20948_MIN_MST_ODR_CONFIG       4
+
 #define  ICM20948_FIFO_DIVIDER 19
 
 #define  ICM20948_REG_BANK_0 0x00

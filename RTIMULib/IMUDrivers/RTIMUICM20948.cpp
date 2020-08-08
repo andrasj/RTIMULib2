@@ -28,13 +28,143 @@
 #include "RTIMUSettings.h"
 #include "RTIMUICM20948Def.h"
 
-RTIMUICM20948::RTIMUICM20948(RTIMUSettings *settings) : RTIMU(settings)
+RTIMUICM20948::RTIMUICM20948(RTIMUSettings *settings) : RTIMU(settings),m_lastbank(0xff)
 {
 
 }
 
 RTIMUICM20948::~RTIMUICM20948()
 {
+}
+
+bool RTIMUICM20948::SelectBank(unsigned char slaveAddr, unsigned short addr)
+{
+    uint8_t regAddr;
+    uint8_t bank;
+
+    regAddr = (uint8_t) (addr & 0x7F);
+    bank = (uint8_t) (addr >> 7);
+
+    // uint8_t curDevBank;
+    // if (!m_settings->HALRead(slaveAddr, ICM20948_REG_BANK_SEL, 1,&curDevBank, "Failed to read Bank"))
+    //     return false;
+    // if (m_lastbank!= 0xff && (curDevBank >>4) != m_lastbank)
+    // {
+    //     HAL_INFO1("HOLY MOLY BANKY went to %Xh\n",curDevBank>>4);
+    // }
+
+    if (bank != m_lastbank)
+    {
+//        HAL_INFO4("Switching from bank %d to %d for accessing addr: 0x%X (regAddr: 0x%X)\n",m_lastbank,bank,addr,regAddr);
+        if (!m_settings->HALWrite(slaveAddr, ICM20948_REG_BANK_SEL, (bank << 4), "Failed to select Bank"))
+            return false;
+        m_lastbank = bank;
+    }
+    return true;
+}
+
+bool RTIMUICM20948::HALRead(unsigned char slaveAddr, unsigned short addr, unsigned char length,
+                    unsigned char *data, const char *errorMsg)
+{
+    if (!SelectBank(slaveAddr,addr))
+        return false;
+    if (!m_settings->HALRead(slaveAddr, addr & 0x7F, length, data, errorMsg))
+        return false;
+    return true;
+}
+
+bool RTIMUICM20948::HALWrite(unsigned char slaveAddr, unsigned short addr,
+                   unsigned char const data, const char *errorMsg)
+{
+    if (!SelectBank(slaveAddr,addr))
+        return false;
+    if (!m_settings->HALWrite(slaveAddr, addr & 0x7F, data, errorMsg))
+        return false;
+    m_settings->delayMs(10);
+    return true;
+}
+
+bool RTIMUICM20948::HALWrite(unsigned char slaveAddr, unsigned short addr,
+                   unsigned char length, unsigned char const *data, const char *errorMsg)
+{
+    if (!SelectBank(slaveAddr,addr))
+        return false;
+    if (!m_settings->HALWrite(slaveAddr, addr & 0x7F, length, data, errorMsg))
+        return false;
+    m_settings->delayMs(10);
+    return true;
+}
+
+bool RTIMUICM20948::foo_debug()
+{
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
+    m_settings->delayMs(5);
+
+
+    //bypassOff();
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_INT_PIN_CFG, 0x30, "Failed to disable SLV0")) return false;
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_MST_CTRL, 0x4D, "Failed to disable SLV0")) return false;
+    // if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_MST_DELAY_CTRL, 0x01, "Failed to disable SLV0")) return false;
+
+        // self.write(ICM20948_I2C_MST_CTRL, 0x4D)
+        // self.write(ICM20948_I2C_MST_DELAY_CTRL, 0x01)
+
+
+    //disable all secondary I2C slaves
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  0, "Failed to disable SLV0")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV1_CTRL,  0, "Failed to disable SLV1")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV2_CTRL,  0, "Failed to disable SLV2")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV3_CTRL,  0, "Failed to disable SLV3")) return false;
+    m_settings->delayMs(5);
+	// Set up the secondary I2C bus on 20630. (inv_icm20948_set_secondary)
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_MST_CTRL,  ICM20948_BIT_I2C_MST_P_NSR, "Failed to setup I2C")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_MST_ODR_CONFIG,  ICM20948_MIN_MST_ODR_CONFIG, "Failed to setup I2C")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
+
+    m_settings->delayMs(50);
+
+    unsigned char curUsrCtrl;
+    if (!HALRead(m_slaveAddr,  ICM20948_REG_USER_CTRL, 1, &curUsrCtrl ,"Failed to use SLV0")) return false;
+while (true)
+{
+    /* code */
+
+    unsigned char akId = 0xff;
+    //inv_icm20948_execute_read_secondary
+    // inv_icm20948_read_secondary
+    char len=1;
+    unsigned char akAddr = AK09916_ADDRESS;
+    unsigned char addr = ICM20948_INV_MPU_BIT_I2C_READ | akAddr;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_ADDR,  addr, "Failed to use SLV0")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_REG,  REG_AK09916_WIA1, "Failed to use SLV0")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to use SLV0")) return false;
+    // // inv_icm20948_secondary_enable_i2c
+    // HAL_INFO1("USER_CTRL: %Xh\n",curUsrCtrl);
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl | ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
+    m_settings->delayMs(50);
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl & (~ICM20948_BIT_I2C_MST_EN), "Failed to use SLV0")) return false;
+    m_settings->delayMs(10);
+    if (!HALRead(m_slaveAddr,  ICM20948_REG_EXT_SLV_SENS_DATA_00,  1, &akId, "Failed to disable SLV0")) return false;
+    //if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  0, "Failed to disable SLV0")) return false;
+    HAL_INFO1("AK company ID: %Xh\n",akId);
+
+
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_ADDR,  addr, "Failed to use SLV0")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_REG,  REG_AK09916_WIA2, "Failed to use SLV0")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to use SLV0")) return false;
+    m_settings->delayMs(100);
+    // // inv_icm20948_secondary_enable_i2c
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl | ICM20948_BIT_I2C_MST_EN, "Failed to use SLV0")) return false;
+    m_settings->delayMs(50);
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUsrCtrl & (~ICM20948_BIT_I2C_MST_EN), "Failed to use SLV0")) return false;
+    if (!HALRead(m_slaveAddr,  ICM20948_REG_EXT_SLV_SENS_DATA_00,  1, &akId, "Failed to disable SLV0")) return false;
+    HAL_INFO1("AK Dev ID: %Xh\n",akId);
+
+ //       break; //while(true)
+    m_settings->delayMs(1000);
+    }
+
+    return false;
 }
 
 bool RTIMUICM20948::IMUInit()
@@ -63,7 +193,7 @@ bool RTIMUICM20948::IMUInit()
     m_slaveAddr = m_settings->m_I2CSlaveAddress;
 
     setSampleRate(m_settings->m_ICM20948GyroAccelSampleRate);
-    // setCompassRate(m_settings->m_ICM20948CompassSampleRate);
+    setCompassRate(m_settings->m_ICM20948CompassSampleRate);
     setGyroLpf(m_settings->m_ICM20948GyroLpf);
     setAccelLpf(m_settings->m_ICM20948AccelLpf);
     setGyroFsr(m_settings->m_ICM20948GyroFsr);
@@ -74,17 +204,17 @@ bool RTIMUICM20948::IMUInit()
 
     //  enable the bus
 
-    if (!m_settings->HALOpen())
+    if (!HALOpen())
         return false;
 
     //  reset the ICM20948
 
-    if (!m_settings->HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1,  ICM20948_BIT_H_RESET, "Failed to initiate ICM20948 reset"))
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1,  ICM20948_BIT_H_RESET, "Failed to initiate ICM20948 reset"))
         return false;
 
     m_settings->delayMs(100);
 
-    if (!m_settings->HALRead(m_slaveAddr, ICM20948_REG_WHO_AM_I, 1, &result, "Failed to read ICM20948 id"))
+    if (!HALRead(m_slaveAddr, ICM20948_REG_WHO_AM_I, 1, &result, "Failed to read ICM20948 id"))
         return false;
 
     if (result != ICM20948_DEVICE_ID) {
@@ -92,15 +222,22 @@ bool RTIMUICM20948::IMUInit()
         return false;
     }
 
+    //Set clock and pull out of sleep mode (which is default after reset)
     /* Auto selects the best available clock source  PLL if ready, else use the Internal oscillator */
-    if (!m_settings->HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1,  ICM20948_BIT_CLK_PLL, "Failed to select clock"))
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1,  ICM20948_BIT_CLK_PLL, "Failed to select clock"))
         return false;
 
     /* PLL startup time - maybe it is too long but better be on the safe side, no spec in the datasheet */
     m_settings->delayMs(30);
 
-    HAL_INFO("Clock selected\n");
+    uint8_t curPwrMgmt1;
+    if (!HALRead(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1, 1, &curPwrMgmt1, "Failed to read PWR_MGMT_1"))
+        return false;
+    HAL_INFO1("PWR_MGMT_1 : %Xh\n",curPwrMgmt1);
 
+
+    foo_debug();
+    return false;
     //  now configure the various components
 
     if (!setGyroConfig())
@@ -112,35 +249,15 @@ bool RTIMUICM20948::IMUInit()
     if (!setSampleRate())
         return false;
 
-    // if(!compassSetup()) {
-    //     return false;
-    // }
-
-    // if (!setCompassRate())
-    //     return false;
-
-    //  enable the sensors
-
-    uint8_t pwrManagement1;
-    uint8_t pwrManagement2;
-
-    if (!m_settings->HALRead(m_slaveAddr, ICM20948_REG_PWR_MGMT_1, 1, &pwrManagement1, "Failed to read current power state"))
-         return false;
-    pwrManagement2 = 0;
-
-    /* To enable the accelerometer clear the DISABLE_ACCEL bits in PWR_MGMT_2 */
-    pwrManagement2 &= ~(ICM20948_BIT_PWR_ACCEL_STBY);
-
-    /* To enable gyro clear the DISABLE_GYRO bits in PWR_MGMT_2 */
-    pwrManagement2 &= ~(ICM20948_BIT_PWR_GYRO_STBY);
-
-    // /* To enable the temperature sensor clear the TEMP_DIS bit in PWR_MGMT_1 */
-    // pwrManagement1 &= ~(ICM20948_BIT_TEMP_DIS);
-
-    /* Write back the modified values */
-    if (!m_settings->HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1,  pwrManagement1, "Failed to set REG_PWR_MGMT_1"))
+    if(!compassSetup()) {
         return false;
-    if (!m_settings->HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_2,  pwrManagement2, "Failed to set REG_PWR_MGMT_2"))
+    }
+
+    if (!setCompassRate())
+        return false;
+
+    //  enable Gyro && Accel sensors
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_2,  0, "Failed to set REG_PWR_MGMT_2"))
         return false;
 
     //  select the data to go into the FIFO and enable
@@ -223,7 +340,7 @@ bool RTIMUICM20948::setAccelLpf(unsigned char lpf)
 
 bool RTIMUICM20948::setCompassRate(int rate)
 {
-    if ((rate < MPU9250_COMPASSRATE_MIN) || (rate > MPU9250_COMPASSRATE_MAX)) {
+    if ((rate < ICM20948_COMPASSRATE_MIN) || (rate > ICM20948_COMPASSRATE_MAX)) {
         HAL_ERROR1("Illegal compass rate %d\n", rate);
         return false;
     }
@@ -292,23 +409,23 @@ bool RTIMUICM20948::setAccelFsr(unsigned char fsr)
 
 bool RTIMUICM20948::resetFifo(){
 
-     if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, 0, "Disabling the fifo"))
+     if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, 0, "Disabling the fifo"))
         return false;
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_1, 0, "Writing fifo disable"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_1, 0, "Writing fifo disable"))
         return false;
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, 0, "disabling fifo for Acc & Gyro"))
-        return false;
-
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x0F, "Resetting fifo"))
-        return false;
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x00, "Undo Resetting fifo"))
-        return false;
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, ICM20948_BIT_ACCEL_FIFO_EN|ICM20948_BITS_GYRO_FIFO_EN, "enabling fifo for Acc & Gyro"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, 0, "disabling fifo for Acc & Gyro"))
         return false;
 
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_FIFO_MODE, 0x0F, "Set fifo as snapshot"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x0F, "Resetting fifo"))
         return false;
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, ICM20948_BIT_FIFO_EN, "Enabling the fifo"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x00, "Undo Resetting fifo"))
+        return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, ICM20948_BIT_ACCEL_FIFO_EN|ICM20948_BITS_GYRO_FIFO_EN, "enabling fifo for Acc & Gyro"))
+        return false;
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_MODE, 0x0F, "Set fifo as snapshot"))
+        return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, ICM20948_BIT_FIFO_EN, "Enabling the fifo"))
         return false;
 
     m_settings->delayMs(50);
@@ -321,7 +438,7 @@ bool RTIMUICM20948::setGyroConfig()
 
     HAL_INFO1("Set GYRO_CONFIG_1 to 0x%x\n",gyroConfig)
 
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_GYRO_CONFIG_1, gyroConfig, "Failed to write gyro config"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_GYRO_CONFIG_1, gyroConfig, "Failed to write gyro config"))
          return false;
 
     return true;
@@ -332,7 +449,7 @@ bool RTIMUICM20948::setAccelConfig()
     unsigned char accelConfig = m_accelFsr | m_accelLpf;
     HAL_INFO3("Set ACCEL_CONFIG to 0x%x (FS: 0x%x, LPF: 0x%x)\n",accelConfig,m_accelFsr,m_accelLpf);
 
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_CONFIG, accelConfig, "Failed to write accel config"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_CONFIG, accelConfig, "Failed to write accel config"))
          return false;
 
     return true;
@@ -360,7 +477,7 @@ bool RTIMUICM20948::setSampleRate()
     
     HAL_INFO1("Set GYRO_SMPLRT_DIV to 0x%x\n",gyroDiv)
   
-    if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_GYRO_SMPLRT_DIV, gyroDiv, "Failed to set gyro sample rate"))
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_GYRO_SMPLRT_DIV, gyroDiv, "Failed to set gyro sample rate"))
         return false;
 
 
@@ -383,9 +500,9 @@ bool RTIMUICM20948::setSampleRate()
     /* Write the value to the registers */
     accelDiv = (uint16_t) accelSampleRate;
     HAL_INFO1("Set ACCEL_SMPLRT_DIV to 0x%x\n",accelDiv)
-   if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_1, (uint8_t) (accelDiv >> 8), "Failed to set MSB accel sample rate"))
+   if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_1, (uint8_t) (accelDiv >> 8), "Failed to set MSB accel sample rate"))
         return false;
-   if (!m_settings->HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_2, (uint8_t) (accelDiv & 0xFF), "Failed to set LSB accel sample rate"))
+   if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_2, (uint8_t) (accelDiv & 0xFF), "Failed to set LSB accel sample rate"))
         return false;
 
     return true;
@@ -399,6 +516,8 @@ int RTIMUICM20948::IMUGetPollInterval()
         return (400 / m_sampleRate);
 }
 
+
+
 bool RTIMUICM20948::IMURead()
 {
     unsigned char fifoCount[2];
@@ -406,7 +525,7 @@ bool RTIMUICM20948::IMURead()
     unsigned char fifoData[12];
     unsigned char compassData[8];
 
-    if (!m_settings->HALRead(m_slaveAddr, ICM20948_REG_FIFO_COUNT_H, 2, fifoCount, "Failed to read fifo count"))
+    if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_COUNT_H, 2, fifoCount, "Failed to read fifo count"))
          return false;
 
 
@@ -425,11 +544,11 @@ bool RTIMUICM20948::IMURead()
     if ((m_cacheCount == 0) && (count  >= ICM20948_FIFO_CHUNK_SIZE) && (count < (ICM20948_CACHE_SIZE * ICM20948_FIFO_CHUNK_SIZE))) {
         // special case of a small fifo and nothing cached - just handle as simple read
 
-        if (!m_settings->HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
+        if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
             return false;
 
-        // if (!m_settings->HALRead(m_slaveAddr, ICM20948_EXT_SENS_DATA_00, 8, compassData, "Failed to read compass data"))
-        //     return false;
+        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 8, compassData, "Failed to read compass data"))
+             return false;
     } else {
         if (count >= (ICM20948_CACHE_SIZE * ICM20948_FIFO_CHUNK_SIZE)) {
             if (m_cacheCount == ICM20948_CACHE_BLOCK_COUNT) {
@@ -445,12 +564,12 @@ bool RTIMUICM20948::IMURead()
             if (blockCount > ICM20948_CACHE_SIZE)
                 blockCount = ICM20948_CACHE_SIZE;
 
-            if (!m_settings->HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE * blockCount,
+            if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE * blockCount,
                     m_cache[m_cacheIn].data, "Failed to read fifo data"))
                 return false;
 
-            // if (!m_settings->HALRead(m_slaveAddr, ICM20948_EXT_SENS_DATA_00, 8, m_cache[m_cacheIn].compass, "Failed to read compass data"))
-            //     return false;
+            if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 8, m_cache[m_cacheIn].compass, "Failed to read compass data"))
+                 return false;
 
             m_cache[m_cacheIn].count = blockCount;
             m_cache[m_cacheIn].index = 0;
@@ -485,7 +604,7 @@ bool RTIMUICM20948::IMURead()
     if (count > ICM20948_FIFO_CHUNK_SIZE * 40) {
         // more than 40 samples behind - going too slowly so discard some samples but maintain timestamp correctly
         while (count >= ICM20948_FIFO_CHUNK_SIZE * 10) {
-            if (!m_settings->HALRead(m_slaveAddr, ICM20948_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
+            if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
                 return false;
             count -= ICM20948_FIFO_CHUNK_SIZE;
             m_imuData.timestamp += m_sampleInterval;
@@ -495,10 +614,10 @@ bool RTIMUICM20948::IMURead()
     if (count < ICM20948_FIFO_CHUNK_SIZE)
         return false;
 
-    if (!m_settings->HALRead(m_slaveAddr, ICM20948_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
+    if (!HALRead(m_slaveAddr, ICM20948_REG_FIFO_R_W, ICM20948_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
         return false;
 
-    if (!m_settings->HALRead(m_slaveAddr, ICM20948_EXT_SENS_DATA_00, 8, compassData, "Failed to read compass data"))
+    if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 8, compassData, "Failed to read compass data"))
         return false;
 
 #endif
@@ -548,6 +667,159 @@ bool RTIMUICM20948::IMURead()
 
     updateFusion();
 
+    return true;
+}
+
+bool RTIMUICM20948::compassSetup() {
+    if (m_settings->m_busIsI2C) {
+        // I2C mode
+
+        bypassOn();
+
+        // get fuse ROM data
+
+        if (!m_settings->HALWrite(AK09916_ADDRESS, REG_AK09916_CNTL2, 0, "Failed to set compass in power down")) {
+            bypassOff();
+            return false;
+        }
+
+        if (!m_settings->HALWrite(AK09916_ADDRESS, REG_AK09916_CNTL2, 0x04, "Failed to set compass in mode 2")) {
+            bypassOff();
+            return false;
+        }
+
+        bypassOff();
+
+    } else {
+    //  SPI mode
+
+        bypassOff();
+
+//        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_MST_DELAY_CTRL, 0x80, "Failed to set I2C master mode"))
+        // if (!HALWrite(m_slaveAddr,ICM20948_REG_LP_CONFIG, 0x40, "Failed to set I2C master mode"))
+        //     return false;
+
+        uint8_t len=1;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address"))
+            return false;
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_WIA2, "Failed to set slave 0 reg"))
+            return false;
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl"))
+            return false;
+  
+        m_settings->delayMs(10);
+        unsigned char wia;
+        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, len, &wia, "Failed to read WIA"))
+            return false;
+
+        HAL_INFO1("WIA: %d\n",wia);
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_ADDR, AK09916_ADDRESS, "Failed to set slave 1 address"))
+            return false;
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_REG, REG_AK09916_CNTL2, "Failed to set slave 1 reg"))
+            return false;
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_CTRL, 0x81, "Failed to set slave 1 ctrl"))
+            return false;
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_DO, 0x00, "Failed to set compass in power down mode 2"))
+            return false;
+
+        m_settings->delayMs(10);
+
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_DO, 0x04, "Failed to set compass in mode 2"))
+            return false;
+
+        m_settings->delayMs(10);
+
+    }
+    //  both interfaces
+
+    m_compassAdjust[0] = 1.0f;
+    m_compassAdjust[1] = 1.0f;
+    m_compassAdjust[2] = 1.0f;
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, 0x80 | AK09916_ADDRESS, "Failed to set slave 0 address"))
+        return false;
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_STATUS1, "Failed to set slave 0 reg"))
+        return false;
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, 0x89, "Failed to set slave 0 ctrl"))
+        return false;
+    
+    m_settings->delayMs(10);
+
+    unsigned char compMeas[9];
+    if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compMeas, "Failed to set slave 0 ctrl"))
+        return false;
+
+    HAL_INFO2("Compass Status 1: %Xh - 2: %Xh\n",compMeas[0],compMeas[8]);
+    HAL_INFO3("Compass Data X: %d Y: %Xh Z: %d\n", (compMeas[2]<<8) | compMeas[1]
+                                                 , (compMeas[4]<<8) | compMeas[3]
+                                                 , (compMeas[6]<<8) | compMeas[5]);
+
+
+    return true;
+}
+
+bool RTIMUICM20948::setCompassRate()
+{
+    int rate;
+
+    rate = m_sampleRate / m_compassRate - 1;
+
+    if (rate > 31)
+        rate = 31;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV4_CTRL, rate, "Failed to set slave ctrl 4"))
+         return false;
+    return true;
+}
+
+
+bool RTIMUICM20948::bypassOn()
+{
+    unsigned char userControl;
+
+    if (!HALRead(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &userControl, "Failed to read user_ctrl reg"))
+        return false;
+
+    userControl &= ~0x20;
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &userControl, "Failed to write user_ctrl reg"))
+        return false;
+
+    m_settings->delayMs(50);
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_INT_PIN_CFG, 0x82, "Failed to write int_pin_cfg reg"))
+        return false;
+
+    m_settings->delayMs(50);
+    return true;
+}
+
+
+bool RTIMUICM20948::bypassOff()
+{
+    unsigned char userControl;
+
+    if (!HALRead(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &userControl, "Failed to read user_ctrl reg"))
+        return false;
+
+    userControl |= 0x20;
+
+    if (!HALWrite(m_slaveAddr,ICM20948_REG_USER_CTRL, 1, &userControl, "Failed to write user_ctrl reg"))
+        return false;
+
+    m_settings->delayMs(50);
+
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_INT_PIN_CFG, 0x80, "Failed to write int_pin_cfg reg"))
+         return false;
+
+    m_settings->delayMs(50);
     return true;
 }
 

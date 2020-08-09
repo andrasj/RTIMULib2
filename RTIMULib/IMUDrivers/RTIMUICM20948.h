@@ -50,7 +50,7 @@ typedef struct
     unsigned char data[ICM20948_FIFO_CHUNK_SIZE * ICM20948_CACHE_SIZE];
     int count;                                              // number of chunks in the cache block
     int index;                                              // current index into the cache
-    unsigned char compass[8];                               // the raw compass readings for the block
+    unsigned char compass[9];                               // the raw compass readings for the block
 
 } ICM20948_CACHE_BLOCK;
 

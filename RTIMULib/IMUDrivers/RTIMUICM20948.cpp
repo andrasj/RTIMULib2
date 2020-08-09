@@ -173,7 +173,7 @@ bool RTIMUICM20948::IMUInit()
     m_slaveAddr = m_settings->m_I2CSlaveAddress;
 
     setSampleRate(m_settings->m_ICM20948GyroAccelSampleRate);
-    setCompassRate(m_settings->m_ICM20948CompassSampleRate);
+//    setCompassRate(m_settings->m_ICM20948CompassSampleRate);
     setGyroLpf(m_settings->m_ICM20948GyroLpf);
     setAccelLpf(m_settings->m_ICM20948AccelLpf);
     setGyroFsr(m_settings->m_ICM20948GyroFsr);
@@ -216,8 +216,8 @@ bool RTIMUICM20948::IMUInit()
     HAL_INFO1("PWR_MGMT_1 : %Xh\n",curPwrMgmt1);
 
 
-    foo_debug();
-    return false;
+    // foo_debug();
+    // return false;
     //  now configure the various components
 
     if (!setGyroConfig())
@@ -387,26 +387,20 @@ bool RTIMUICM20948::setAccelFsr(unsigned char fsr)
 }
 
 
-bool RTIMUICM20948::resetFifo(){
+bool RTIMUICM20948::resetFifo()
+{
+    unsigned char origUSER_CTRL;
+    if (!HALRead(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &origUSER_CTRL, "Disabling the fifo")) return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, origUSER_CTRL & ~ICM20948_BIT_FIFO_EN, "Disabling the fifo")) return false;
 
-     if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, 0, "Disabling the fifo"))
-        return false;
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_1, 0, "Writing fifo disable"))
-        return false;
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, 0, "disabling fifo for Acc & Gyro"))
-        return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_1, 0, "Writing fifo disable")) return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, 0, "disabling fifo for Acc & Gyro")) return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x0F, "Resetting fifo")) return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x00, "Undo Resetting fifo")) return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, ICM20948_BIT_ACCEL_FIFO_EN|ICM20948_BITS_GYRO_FIFO_EN, "enabling fifo for Acc & Gyro")) return false;
 
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x0F, "Resetting fifo"))
-        return false;
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_RST, 0x00, "Undo Resetting fifo"))
-        return false;
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_EN_2, ICM20948_BIT_ACCEL_FIFO_EN|ICM20948_BITS_GYRO_FIFO_EN, "enabling fifo for Acc & Gyro"))
-        return false;
-
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_MODE, 0x0F, "Set fifo as snapshot"))
-        return false;
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, ICM20948_BIT_FIFO_EN, "Enabling the fifo"))
-        return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_FIFO_MODE, 0x0F, "Set fifo as snapshot")) return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_USER_CTRL, origUSER_CTRL | ICM20948_BIT_FIFO_EN, "Enabling the fifo")) return false;
 
     m_settings->delayMs(50);
     return true;
@@ -548,7 +542,7 @@ bool RTIMUICM20948::IMURead()
                     m_cache[m_cacheIn].data, "Failed to read fifo data"))
                 return false;
 
-            if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 8, m_cache[m_cacheIn].compass, "Failed to read compass data"))
+            if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, m_cache[m_cacheIn].compass, "Failed to read compass data"))
                  return false;
 
             m_cache[m_cacheIn].count = blockCount;
@@ -566,7 +560,7 @@ bool RTIMUICM20948::IMURead()
             return false;
 
         memcpy(fifoData, m_cache[m_cacheOut].data + m_cache[m_cacheOut].index, ICM20948_FIFO_CHUNK_SIZE);
-        memcpy(compassData, m_cache[m_cacheOut].compass, 8);
+        memcpy(compassData, m_cache[m_cacheOut].compass, 9);
 
         m_cache[m_cacheOut].index += ICM20948_FIFO_CHUNK_SIZE;
 
@@ -673,33 +667,43 @@ bool RTIMUICM20948::compassSetup() {
     } else {
     //  SPI mode
 
-//        bypassOff();
+        //disable all secondary I2C slaves
+        if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  0, "Failed to disable SLV0")) return false;
+        if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV1_CTRL,  0, "Failed to disable SLV1")) return false;
+        if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV2_CTRL,  0, "Failed to disable SLV2")) return false;
+        if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV3_CTRL,  0, "Failed to disable SLV3")) return false;
+        if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV4_CTRL,  0, "Failed to disable SLV4")) return false;
 
-//        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_MST_DELAY_CTRL, 0x80, "Failed to set I2C master mode"))
-        // if (!HALWrite(m_slaveAddr,ICM20948_REG_LP_CONFIG, 0x40, "Failed to set I2C master mode"))
-        //     return false;
-
-        uint8_t len=1;
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address"))
-            return false;
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_WIA2, "Failed to set slave 0 reg"))
-            return false;
-
-        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl"))
-            return false;
-  
-        m_settings->delayMs(20);
-        unsigned char wia;
-        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, len, &wia, "Failed to read WIA"))
-            return false;
-
-        if (wia != AK09916_WIA2_ID)
-        {
-            HAL_ERROR2("Invalid magnetometer ID, expected %Xh but was %Xh\n",AK09916_WIA2_ID,wia);
-            return false;
+        {//enable I2C master mode
+            unsigned char curUSER_CTRL;
+            if (!HALRead(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &curUSER_CTRL, "Failed enable I2C master mode")) return false;
+            if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  curUSER_CTRL | ICM20948_BIT_I2C_MST_EN, "Failed enable I2C master mode")) return false;
+            m_settings->delayMs(20);
         }
+        {//verify compass device ID
+unsigned char cntrs;
+        if (!HALRead(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &cntrs, "Failed to read compasMode")) return false;
+HAL_INFO1("USER_CNTL: %02Xh\n",cntrs);
 
+
+            const uint8_t len=1;
+            if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address")) return false;
+            if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_WIA2, "Failed to set slave 0 reg")) return false;
+            if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl")) return false;
+            m_settings->delayMs(50);
+            unsigned char wia;
+            if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, len, &wia, "Failed to read WIA")) return false;
+
+            if (wia != AK09916_WIA2_ID)
+            {
+                HAL_ERROR2("Invalid magnetometer ID, expected %Xh but was %Xh\n",AK09916_WIA2_ID,wia);
+                return false;
+            }
+            else
+            {
+                HAL_INFO("Magnetometer deviceID as expected\n");
+            }
+        }
     }
     //  both interfaces
 
@@ -707,26 +711,65 @@ bool RTIMUICM20948::compassSetup() {
     m_compassAdjust[1] = 1.0f;
     m_compassAdjust[2] = 1.0f;
 
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address"))
-        return false;
+    {//Configure Magnetometer output
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_ADDR, AK09916_ADDRESS, "Failed to set slave 0 address")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_REG, REG_AK09916_CNTL2, "Failed to set slave 0 reg")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | 1, "Failed to set slave 0 ctrl")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_DO, 0x00, "Failed to disable compass")) return false;
+        m_settings->delayMs(20);
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_DO, 0x02, "Failed to enable compass mode2")) return false;
+        m_settings->delayMs(20);
 
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_STATUS1, "Failed to set slave 0 reg"))
-        return false;
+        //disable SLV1 again.
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_CTRL, 0, "Failed to set slave 0 ctrl")) return false;
+        m_settings->delayMs(20);
+    }
 
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | 9, "Failed to set slave 0 ctrl"))
-        return false;
-    
-//    m_settings->delayMs(20);
+    {//verify compass mode change
+        const uint8_t len=1;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_CNTL2, "Failed to set slave 0 reg")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl")) return false;
+        m_settings->delayMs(20);
+        unsigned char compasMode;
+        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, len, &compasMode, "Failed to read compasMode")) return false;
 
-    unsigned char compMeas[9];
-    if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compMeas, "Failed to set slave 0 ctrl"))
-        return false;
+        if (compasMode != 0x02)
+        {
+            HAL_ERROR1("Magnetometer mode not properly set: %Xh\n",compasMode);
+            return false;
+        }
+        else
+        {
+            HAL_INFO("Magnetometer active\n");
+        }
+    }
 
-    HAL_INFO2("Compass Status 1: %Xh - 2: %Xh\n",compMeas[0],compMeas[8]);
-    HAL_INFO3("Compass Data X: %d Y: %Xh Z: %d\n", (compMeas[2]<<8) | compMeas[1]
-                                                 , (compMeas[4]<<8) | compMeas[3]
-                                                 , (compMeas[6]<<8) | compMeas[5]);
+    {//Configure for reading
+        uint8_t len=9; // ST1 (1byte) + magData (6 bytes) + tmps (1byte) + ST2 (1byte)
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_STATUS1, "Failed to set slave 0 reg")) return false;
+        if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl")) return false;
 
+//for (size_t i = 0; i < 10; i++)
+//while (true)
+{
+
+        m_settings->delayMs(30);
+
+        //verify single sample
+        unsigned char compMeas[9];
+        if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compMeas, "Failed to set slave 0 ctrl")) return false;
+/*        HAL_INFO2("Compass Status 1: %Xh - 2: %Xh\n",compMeas[0],compMeas[8]);
+        HAL_INFO3("Compass Data X: %d Y: %X Z: %d\n", (compMeas[2]<<8) | compMeas[1]
+                                                    , (compMeas[4]<<8) | compMeas[3]
+                                                    , (compMeas[6]<<8) | compMeas[5]);*/
+        HAL_INFO2("Compass ST1/ST2:          0x%02X %02X\n",compMeas[0],compMeas[8]);
+        HAL_INFO2("Compass HX: 0x%02X %02X\n",compMeas[2],compMeas[1]);
+        HAL_INFO2("Compass HY: 0x%02X %02X\n",compMeas[4],compMeas[3]);
+        HAL_INFO2("Compass HZ: 0x%02X %02X\n",compMeas[6],compMeas[5]);
+}
+    }
 
     return true;
 }

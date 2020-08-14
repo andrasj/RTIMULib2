@@ -573,31 +573,18 @@ bool RTIMUICM20948::IMURead()
     RTMath::convertToVector(fifoData + 6, m_imuData.gyro, m_gyroScale, true);
     RTMath::convertToVector(compassData + 1, m_imuData.compass, 0.15f, false);
 
-//    printf("Accel: %5.2f %5.2f %5.2f\n",m_imuData.accel.x(),m_imuData.accel.y(),m_imuData.accel.z());
-    // ,((int16_t)((fifoData[2]<<8)|(uint16_t)fifoData[3]))*m_accelScale
-    // ,((int16_t)((fifoData[4]<<8)|(uint16_t)fifoData[5]))*m_accelScale);
-    // printf("Accel: %5d %5d %5d\n",(int16_t)((fifoData[0]<<8)|fifoData[1])
-    // ,(int16_t)((fifoData[2]<<8)|fifoData[3]),(int16_t)((fifoData[4]<<8)|fifoData[5]));
+    //printf("Accel: %5.2f %5.2f %5.2f\n",m_imuData.accel.x(),m_imuData.accel.y(),m_imuData.accel.z());
 
     //  sort out gyro axes
-
     m_imuData.gyro.setX(m_imuData.gyro.x());
     m_imuData.gyro.setY(-m_imuData.gyro.y());
     m_imuData.gyro.setZ(-m_imuData.gyro.z());
 
     //  sort out accel data;
-
     m_imuData.accel.setX(-m_imuData.accel.x());
 
     //  sort out compass axes
-
-    // float temp;
-
-    // temp = m_imuData.compass.x();
-    // m_imuData.compass.setX(m_imuData.compass.y());
-    // m_imuData.compass.setY(-temp);
-    m_imuData.compass.setY(-m_imuData.compass.y());
-    //m_imuData.compass.setZ(-m_imuData.compass.z());
+    //  done, seems to be correct
 
     //  now do standard processing
 

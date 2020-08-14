@@ -69,9 +69,6 @@ public:
     virtual bool IMURead();
     virtual int IMUGetPollInterval();
 
-protected:
-
-    RTFLOAT m_compassAdjust[3];                             // the compass fuse ROM values converted for use
 private:
     bool HALOpen() {return m_settings->HALOpen();}
     void HALClose(){m_settings->HALClose();}
@@ -86,18 +83,19 @@ private:
 
 
 private:
+    //validate & precalculate chip values
     bool setGyroLpf(unsigned char lpf);
+    bool setGyroFsr(unsigned char fsr);
     bool setAccelLpf(unsigned char lpf);
+    bool setAccelFsr(unsigned char fsr);
     bool setSampleRate(int rate);
     bool setCompassRate(int rate);
-    bool setGyroFsr(unsigned char fsr);
-    bool setAccelFsr(unsigned char fsr);
+
+    //configure chip
     bool resetFifo();
     bool setGyroConfig();
     bool setAccelConfig();
-    bool setSampleRate();
     bool compassSetup();
-    bool setCompassRate();
     bool bypassOn();
     bool bypassOff();
 
@@ -111,7 +109,7 @@ private:
 
     unsigned char m_gyroLpf;                                // gyro low pass filter setting
     unsigned char m_accelLpf;                               // accel low pass filter setting
-    int m_compassRate;                                      // compass sample rate in Hz
+    unsigned char m_compassRate;                            // compass sample rate mode
     unsigned char m_gyroFsr;
     unsigned char m_accelFsr;
 

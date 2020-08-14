@@ -517,11 +517,11 @@ void RTIMUSettings::setDefaults()
     //  ICM20948 defaults
 
     m_ICM20948GyroAccelSampleRate = 80;
-    m_ICM20948CompassSampleRate = 40;
-    m_ICM20948GyroLpf = ICM20648_GYRO_LPF_24HZ;
-    m_ICM20948AccelLpf = ICM20648_ACCEL_LPF_24HZ;
-    m_ICM20948GyroFsr = ICM20648_GYRO_FULLSCALE_1000DPS;
-    m_ICM20948AccelFsr = ICM20648_ACCEL_FULLSCALE_8G;
+    m_ICM20948CompassSampleRate = 50;
+    m_ICM20948GyroLpf = ICM20948_GYRO_LPF_24HZ;
+    m_ICM20948AccelLpf = ICM20948_ACCEL_LPF_24HZ;
+    m_ICM20948GyroFsr = ICM20948_GYRO_FULLSCALE_1000DPS;
+    m_ICM20948AccelFsr = ICM20948_ACCEL_FULLSCALE_8G;
 
    //  GD20HM303D defaults
 
@@ -1221,6 +1221,8 @@ bool RTIMUSettings::saveSettings()
     setValue(RTIMULIB_MPU9250_ACCEL_FSR, m_MPU9250AccelFsr);
 
     //  ICM-20948 settings
+    char buff[200];
+#define ICMPrintSetting(val,unit,registerValue) sprintf(buff, "%5d (0x%02X) - %d%s",registerValue,registerValue,val,unit); setComment(buff);
 
     setBlank();
     setComment("#####################################################################");
@@ -1229,57 +1231,57 @@ bool RTIMUSettings::saveSettings()
     setComment("");
 
     setBlank();
-    setComment("Gyro sample rate (between 5Hz and 1000Hz plus 8000Hz and 32000Hz) ");
+    setComment("Gyro sample rate (between 5Hz and 1000Hz) ");
     setValue(RTIMULIB_ICM20948_GYROACCEL_SAMPLERATE, m_ICM20948GyroAccelSampleRate);
 
     setBlank();
     setComment("");
-    setComment("Compass sample rate (between 1Hz and 100Hz) ");
+    setComment("Compass sample rate in %Hz (supported: 10,20,50,100)");
     setValue(RTIMULIB_ICM20948_COMPASS_SAMPLERATE, m_ICM20948CompassSampleRate);
 
     setBlank();
     setComment("");
     setComment("Gyro low pass filter - ");
-    setComment("  0x11 - 8800Hz, 0.64mS delay");
-    setComment("  0x10 - 3600Hz, 0.11mS delay");
-    setComment("  0x00 - 250Hz, 0.97mS delay");
-    setComment("  0x01 - 184Hz, 2.9mS delay");
-    setComment("  0x02 - 92Hz, 3.9mS delay");
-    setComment("  0x03 - 41Hz, 5.9mS delay");
-    setComment("  0x04 - 20Hz, 9.9mS delay");
-    setComment("  0x05 - 10Hz, 17.85mS delay");
-    setComment("  0x06 - 5Hz, 33.48mS delay");
+    ICMPrintSetting(12100,"Hz",ICM20948_GYRO_LPF_12100HZ)        
+    ICMPrintSetting(360  ,"Hz",ICM20948_GYRO_LPF_360HZ  )         
+    ICMPrintSetting(200  ,"Hz",ICM20948_GYRO_LPF_200HZ  )        
+    ICMPrintSetting(150  ,"Hz",ICM20948_GYRO_LPF_150HZ  )        
+    ICMPrintSetting(120  ,"Hz",ICM20948_GYRO_LPF_120HZ  )        
+    ICMPrintSetting(51   ,"Hz",ICM20948_GYRO_LPF_51HZ   )        
+    ICMPrintSetting(24   ,"Hz",ICM20948_GYRO_LPF_24HZ   )        
+    ICMPrintSetting(12   ,"Hz",ICM20948_GYRO_LPF_12HZ   )        
+    ICMPrintSetting(6    ,"Hz",ICM20948_GYRO_LPF_6HZ    )        
     setValue(RTIMULIB_ICM20948_GYRO_LPF, m_ICM20948GyroLpf);
 
     setBlank();
     setComment("");
     setComment("Accel low pass filter - ");
-    setComment("  0x08 - 1130Hz, 0.75mS delay");
-    setComment("  0x00 - 460Hz, 1.94mS delay");
-    setComment("  0x01 - 184Hz, 5.80mS delay");
-    setComment("  0x02 - 92Hz, 7.80mS delay");
-    setComment("  0x03 - 41Hz, 11.80mS delay");
-    setComment("  0x04 - 20Hz, 19.80mS delay");
-    setComment("  0x05 - 10Hz, 35.70mS delay");
-    setComment("  0x06 - 5Hz, 66.96mS delay");
+    ICMPrintSetting(1210,"Hz",ICM20948_ACCEL_LPF_1210HZ)
+    ICMPrintSetting(470 ,"Hz",ICM20948_ACCEL_LPF_470HZ )
+    ICMPrintSetting(246 ,"Hz",ICM20948_ACCEL_LPF_246HZ )
+    ICMPrintSetting(111 ,"Hz",ICM20948_ACCEL_LPF_111HZ )
+    ICMPrintSetting(50  ,"Hz",ICM20948_ACCEL_LPF_50HZ  )
+    ICMPrintSetting(24  ,"Hz",ICM20948_ACCEL_LPF_24HZ  )
+    ICMPrintSetting(12  ,"Hz",ICM20948_ACCEL_LPF_12HZ  )
+    ICMPrintSetting(6   ,"Hz",ICM20948_ACCEL_LPF_6HZ   )
     setValue(RTIMULIB_ICM20948_ACCEL_LPF, m_ICM20948AccelLpf);
 
     setBlank();
     setComment("");
     setComment("Gyro full scale range - ");
-    setComment("  0  - +/- 250 degress per second");
-    setComment("  8  - +/- 500 degress per second");
-    setComment("  16 - +/- 1000 degress per second");
-    setComment("  24 - +/- 2000 degress per second");
+    ICMPrintSetting(250,"degress per second",ICM20948_GYRO_FULLSCALE_250DPS );
+    ICMPrintSetting(500,"degress per second",ICM20948_GYRO_FULLSCALE_500DPS );
+    ICMPrintSetting(1000,"degress per second",ICM20948_GYRO_FULLSCALE_1000DPS);
+    ICMPrintSetting(2000,"degress per second",ICM20948_GYRO_FULLSCALE_2000DPS);
     setValue(RTIMULIB_ICM20948_GYRO_FSR, m_ICM20948GyroFsr);
 
     setBlank();
     setComment("");
     setComment("Accel full scale range - ");
-    setComment("  0  - +/- 2g");
-    setComment("  8  - +/- 4g");
-    setComment("  16 - +/- 8g");
-    setComment("  24 - +/- 16g");
+    ICMPrintSetting(2 ,"g",ICM20948_ACCEL_FULLSCALE_2G )
+    ICMPrintSetting(4 ,"g",ICM20948_ACCEL_FULLSCALE_4G )
+    ICMPrintSetting(8 ,"g",ICM20948_ACCEL_FULLSCALE_8G )
+    ICMPrintSetting(16,"g",ICM20948_ACCEL_FULLSCALE_16G)
     setValue(RTIMULIB_ICM20948_ACCEL_FSR, m_ICM20948AccelFsr);
 
     //  GD20HM303D settings

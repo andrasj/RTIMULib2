@@ -258,56 +258,50 @@
 #define ICM20948_COMPASSRATE_MAX     100                     // 100 samples per second is maximum
 
 //  Gyro LPF options
-#define ICM20648_BIT_GYRO_FCHOICE        0x01                        /**< Gyro Digital Low-Pass Filter enable bit    */
-#define ICM20648_SHIFT_GYRO_FS_SEL       1                           /**< Gyro Full Scale Select bit shift           */
-#define ICM20648_SHIFT_GYRO_DLPCFG       3                           /**< Gyro DLPF Config bit shift                 */
-#define ICM20648_MASK_GYRO_FULLSCALE     0x06                        /**< Gyro Full Scale Select bitmask             */
-#define ICM20648_MASK_GYRO_BW            0x39                        /**< Gyro Bandwidth Select bitmask              */
-#define ICM20648_GYRO_LPF_12100HZ         (0x00 << ICM20648_SHIFT_GYRO_DLPCFG)                                     /**< Gyro Bandwidth = 12100 Hz */
-#define ICM20648_GYRO_LPF_360HZ           ( (0x07 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 360 Hz   */
-#define ICM20648_GYRO_LPF_200HZ           ( (0x00 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 200 Hz   */
-#define ICM20648_GYRO_LPF_150HZ           ( (0x01 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 150 Hz   */
-#define ICM20648_GYRO_LPF_120HZ           ( (0x02 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 120 Hz   */
-#define ICM20648_GYRO_LPF_51HZ            ( (0x03 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 51 Hz    */
-#define ICM20648_GYRO_LPF_24HZ            ( (0x04 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 24 Hz    */
-#define ICM20648_GYRO_LPF_12HZ            ( (0x05 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 12 Hz    */
-#define ICM20648_GYRO_LPF_6HZ             ( (0x06 << ICM20648_SHIFT_GYRO_DLPCFG) | ICM20648_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 6 Hz     */
+#define ICM20948_BIT_GYRO_FCHOICE        0x01                        /**< Gyro Digital Low-Pass Filter enable bit    */
+#define ICM20948_SHIFT_GYRO_FS_SEL       1                           /**< Gyro Full Scale Select bit shift           */
+#define ICM20948_SHIFT_GYRO_DLPCFG       3                           /**< Gyro DLPF Config bit shift                 */
+#define ICM20948_MASK_GYRO_FULLSCALE     0x06                        /**< Gyro Full Scale Select bitmask             */
+#define ICM20948_MASK_GYRO_BW            0x39                        /**< Gyro Bandwidth Select bitmask              */
+#define ICM20948_GYRO_LPF_12100HZ         (0x00 << ICM20948_SHIFT_GYRO_DLPCFG)                                     /**< Gyro Bandwidth = 12100 Hz */
+#define ICM20948_GYRO_LPF_360HZ           ( (0x07 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 360 Hz   */
+#define ICM20948_GYRO_LPF_200HZ           ( (0x00 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 200 Hz   */
+#define ICM20948_GYRO_LPF_150HZ           ( (0x01 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 150 Hz   */
+#define ICM20948_GYRO_LPF_120HZ           ( (0x02 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 120 Hz   */
+#define ICM20948_GYRO_LPF_51HZ            ( (0x03 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 51 Hz    */
+#define ICM20948_GYRO_LPF_24HZ            ( (0x04 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 24 Hz    */
+#define ICM20948_GYRO_LPF_12HZ            ( (0x05 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 12 Hz    */
+#define ICM20948_GYRO_LPF_6HZ             ( (0x06 << ICM20948_SHIFT_GYRO_DLPCFG) | ICM20948_BIT_GYRO_FCHOICE)      /**< Gyro Bandwidth = 6 Hz     */
 
 //  Gyro FSR options
 
-#define ICM20648_GYRO_FULLSCALE_250DPS   (0x00 << ICM20648_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 250 deg/sec  */
-#define ICM20648_GYRO_FULLSCALE_500DPS   (0x01 << ICM20648_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 500 deg/sec  */
-#define ICM20648_GYRO_FULLSCALE_1000DPS  (0x02 << ICM20648_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 1000 deg/sec */
-#define ICM20648_GYRO_FULLSCALE_2000DPS  (0x03 << ICM20648_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 2000 deg/sec */
+#define ICM20948_GYRO_FULLSCALE_250DPS   (0x00 << ICM20948_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 250 deg/sec  */
+#define ICM20948_GYRO_FULLSCALE_500DPS   (0x01 << ICM20948_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 500 deg/sec  */
+#define ICM20948_GYRO_FULLSCALE_1000DPS  (0x02 << ICM20948_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 1000 deg/sec */
+#define ICM20948_GYRO_FULLSCALE_2000DPS  (0x03 << ICM20948_SHIFT_GYRO_FS_SEL)    /**< Gyro Full Scale = 2000 deg/sec */
 
 //  Accel FSR options
-#define ICM20648_SHIFT_ACCEL_FS          1                           /**< Accel Full Scale Select bit shift                      */
-#define ICM20648_MASK_ACCEL_FULLSCALE    0x06                        /**< Accel Full Scale Select bitmask                        */
-#define ICM20648_ACCEL_FULLSCALE_2G      (0x00 << ICM20648_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 2 g  */
-#define ICM20648_ACCEL_FULLSCALE_4G      (0x01 << ICM20648_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 4 g  */
-#define ICM20648_ACCEL_FULLSCALE_8G      (0x02 << ICM20648_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 8 g  */
-#define ICM20648_ACCEL_FULLSCALE_16G     (0x03 << ICM20648_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 16 g */
+#define ICM20948_SHIFT_ACCEL_FS          1                           /**< Accel Full Scale Select bit shift                      */
+#define ICM20948_MASK_ACCEL_FULLSCALE    0x06                        /**< Accel Full Scale Select bitmask                        */
+#define ICM20948_ACCEL_FULLSCALE_2G      (0x00 << ICM20948_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 2 g  */
+#define ICM20948_ACCEL_FULLSCALE_4G      (0x01 << ICM20948_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 4 g  */
+#define ICM20948_ACCEL_FULLSCALE_8G      (0x02 << ICM20948_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 8 g  */
+#define ICM20948_ACCEL_FULLSCALE_16G     (0x03 << ICM20948_SHIFT_ACCEL_FS)    /**< Accel Full Scale = 16 g */
 
 //  Accel LPF options
-#define ICM20648_BIT_ACCEL_FCHOICE       0x01                        /**< Accel Digital Low-Pass Filter enable bit               */
-#define ICM20648_SHIFT_ACCEL_DLPCFG      3                           /**< Accel DLPF Config bit shift                            */
-#define ICM20648_MASK_ACCEL_BW           0x39                        /**< Accel Bandwidth Select bitmask                         */
+#define ICM20948_BIT_ACCEL_FCHOICE       0x01                        /**< Accel Digital Low-Pass Filter enable bit               */
+#define ICM20948_SHIFT_ACCEL_DLPCFG      3                           /**< Accel DLPF Config bit shift                            */
+#define ICM20948_MASK_ACCEL_BW           0x39                        /**< Accel Bandwidth Select bitmask                         */
 
-#define ICM20648_ACCEL_LPF_1210HZ         (0x00 << ICM20648_SHIFT_ACCEL_DLPCFG)                                    /**< Accel Bandwidth = 1210 Hz  */
-#define ICM20648_ACCEL_LPF_470HZ          ( (0x07 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 470 Hz   */
-#define ICM20648_ACCEL_LPF_246HZ          ( (0x00 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 246 Hz   */
-#define ICM20648_ACCEL_LPF_111HZ          ( (0x02 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 111 Hz   */
-#define ICM20648_ACCEL_LPF_50HZ           ( (0x03 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 50 Hz    */
-#define ICM20648_ACCEL_LPF_24HZ           ( (0x04 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 24 Hz    */
-#define ICM20648_ACCEL_LPF_12HZ           ( (0x05 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 12 Hz    */
-#define ICM20648_ACCEL_LPF_6HZ            ( (0x06 << ICM20648_SHIFT_ACCEL_DLPCFG) | ICM20648_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 6 Hz     */
+#define ICM20948_ACCEL_LPF_1210HZ         (0x00 << ICM20948_SHIFT_ACCEL_DLPCFG)                                    /**< Accel Bandwidth = 1210 Hz  */
+#define ICM20948_ACCEL_LPF_470HZ          ( (0x07 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 470 Hz   */
+#define ICM20948_ACCEL_LPF_246HZ          ( (0x00 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 246 Hz   */
+#define ICM20948_ACCEL_LPF_111HZ          ( (0x02 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 111 Hz   */
+#define ICM20948_ACCEL_LPF_50HZ           ( (0x03 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 50 Hz    */
+#define ICM20948_ACCEL_LPF_24HZ           ( (0x04 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 24 Hz    */
+#define ICM20948_ACCEL_LPF_12HZ           ( (0x05 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 12 Hz    */
+#define ICM20948_ACCEL_LPF_6HZ            ( (0x06 << ICM20948_SHIFT_ACCEL_DLPCFG) | ICM20948_BIT_ACCEL_FCHOICE)    /**< Accel Bandwidth = 6 Hz     */
 
-//  AK09916 compass registers
-
-// #define AK09916_DEVICEID             0x48                    // the device ID
-// #define AK09916_ST1                  0x02                    // status 1
-// #define AK09916_CNTL                 0x0a                    // control reg
-// #define AK09916_ASAX                 0x10                    // start of the fuse ROM data
 //----------------------------------------------------------
 //
 //  L3GD20

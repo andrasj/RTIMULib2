@@ -172,13 +172,13 @@ bool RTIMUICM20948::IMUInit()
 
     m_slaveAddr = m_settings->m_I2CSlaveAddress;
 
-    setSampleRate(m_settings->m_ICM20948GyroAccelSampleRate);
-//    setCompassRate(m_settings->m_ICM20948CompassSampleRate);
-    setGyroLpf(m_settings->m_ICM20948GyroLpf);
-    setAccelLpf(m_settings->m_ICM20948AccelLpf);
-    setGyroFsr(m_settings->m_ICM20948GyroFsr);
-    setAccelFsr(m_settings->m_ICM20948AccelFsr);
-
+    if (!setGyroLpf(m_settings->m_ICM20948GyroLpf)) return false;
+    if (!setAccelLpf(m_settings->m_ICM20948AccelLpf)) return false;
+    if (!setGyroFsr(m_settings->m_ICM20948GyroFsr)) return false;
+    if (!setAccelFsr(m_settings->m_ICM20948AccelFsr)) return false;
+    if (!setSampleRate(m_settings->m_ICM20948GyroAccelSampleRate)) return false;
+    if (!setCompassRate(m_settings->m_ICM20948CompassSampleRate)) return false;
+    
     setCalibrationData();
 
 
@@ -188,6 +188,14 @@ bool RTIMUICM20948::IMUInit()
         return false;
 
     //  reset the ICM20948
+
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV0_CTRL,  0, "Failed to disable SLV0")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV1_CTRL,  0, "Failed to disable SLV1")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV2_CTRL,  0, "Failed to disable SLV2")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV3_CTRL,  0, "Failed to disable SLV3")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_I2C_SLV4_CTRL,  0, "Failed to disable SLV4")) return false;
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_USER_CTRL,  0, "Failed to disable fifo and possible active I2C functions")) return false;
+    m_settings->delayMs(50);
 
     if (!HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1,  ICM20948_BIT_H_RESET, "Failed to initiate ICM20948 reset"))
         return false;
@@ -213,12 +221,15 @@ bool RTIMUICM20948::IMUInit()
     uint8_t curPwrMgmt1;
     if (!HALRead(m_slaveAddr,  ICM20948_REG_PWR_MGMT_1, 1, &curPwrMgmt1, "Failed to read PWR_MGMT_1"))
         return false;
-    HAL_INFO1("PWR_MGMT_1 : %Xh\n",curPwrMgmt1);
 
 
     // foo_debug();
     // return false;
     //  now configure the various components
+
+    //  enable Gyro && Accel sensors
+    if (!HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_2,  0, "Failed to set REG_PWR_MGMT_2"))
+        return false;
 
     if (!setGyroConfig())
         return false;
@@ -226,22 +237,11 @@ bool RTIMUICM20948::IMUInit()
     if (!setAccelConfig())
         return false;
 
-    if (!setSampleRate())
-        return false;
-
     if(!compassSetup()) {
         return false;
     }
 
-    if (!setCompassRate())
-        return false;
-
-    //  enable Gyro && Accel sensors
-    if (!HALWrite(m_slaveAddr,  ICM20948_REG_PWR_MGMT_2,  0, "Failed to set REG_PWR_MGMT_2"))
-        return false;
-
     //  select the data to go into the FIFO and enable
-
      if (!resetFifo())
          return false;
 
@@ -253,25 +253,7 @@ bool RTIMUICM20948::IMUInit()
 
 bool RTIMUICM20948::setSampleRate(int rate)
 {
-    if ((rate <ICM20948_SAMPLERATE_MIN) || (rate > ICM20948_SAMPLERATE_MAX)) {
-        HAL_ERROR1("Illegal sample rate %d\n", rate);
-        return false;
-    }
-
-    //  Note: rates interact with the lpf settings
-
-    if ((rate < ICM20948_SAMPLERATE_MAX) && (rate >= 8000))
-        rate = 8000;
-
-    if ((rate < 8000) && (rate >= 1000))
-        rate = 1000;
-
-    if (rate < 1000) {
-        int sampleDiv = (1000 / rate) - 1;
-        m_sampleRate = 1000 / (1 + sampleDiv);
-    } else {
-        m_sampleRate = rate;
-    }
+    m_sampleRate = rate;
     m_sampleInterval = (uint64_t)1000000 / m_sampleRate;
     return true;
 }
@@ -279,74 +261,88 @@ bool RTIMUICM20948::setSampleRate(int rate)
 bool RTIMUICM20948::setGyroLpf(unsigned char lpf)
 {
     switch (lpf) {
-    case ICM20648_GYRO_LPF_12100HZ:
-    case ICM20648_GYRO_LPF_360HZ  :
-    case ICM20648_GYRO_LPF_200HZ  :
-    case ICM20648_GYRO_LPF_150HZ  :
-    case ICM20648_GYRO_LPF_120HZ  :
-    case ICM20648_GYRO_LPF_51HZ   :
-    case ICM20648_GYRO_LPF_24HZ   :
-    case ICM20648_GYRO_LPF_12HZ   :
-    case ICM20648_GYRO_LPF_6HZ    :
+    case ICM20948_GYRO_LPF_12100HZ:
+    case ICM20948_GYRO_LPF_360HZ  :
+    case ICM20948_GYRO_LPF_200HZ  :
+    case ICM20948_GYRO_LPF_150HZ  :
+    case ICM20948_GYRO_LPF_120HZ  :
+    case ICM20948_GYRO_LPF_51HZ   :
+    case ICM20948_GYRO_LPF_24HZ   :
+    case ICM20948_GYRO_LPF_12HZ   :
+    case ICM20948_GYRO_LPF_6HZ    :
         m_gyroLpf = lpf;
-        return true;
-
+        break;
     default:
         HAL_ERROR1("Illegal ICM20648 gyro lpf %d\n", lpf);
         return false;
     }
+    return true;
 }
 
 bool RTIMUICM20948::setAccelLpf(unsigned char lpf)
 {
     switch (lpf) {
-    case ICM20648_ACCEL_LPF_1210HZ:
-    case ICM20648_ACCEL_LPF_470HZ :
-    case ICM20648_ACCEL_LPF_246HZ :
-    case ICM20648_ACCEL_LPF_111HZ :
-    case ICM20648_ACCEL_LPF_50HZ  :
-    case ICM20648_ACCEL_LPF_24HZ  :
-    case ICM20648_ACCEL_LPF_12HZ  :
-    case ICM20648_ACCEL_LPF_6HZ   :
+    case ICM20948_ACCEL_LPF_1210HZ:
+    case ICM20948_ACCEL_LPF_470HZ :
+    case ICM20948_ACCEL_LPF_246HZ :
+    case ICM20948_ACCEL_LPF_111HZ :
+    case ICM20948_ACCEL_LPF_50HZ  :
+    case ICM20948_ACCEL_LPF_24HZ  :
+    case ICM20948_ACCEL_LPF_12HZ  :
+    case ICM20948_ACCEL_LPF_6HZ   :
         m_accelLpf = lpf;
-        return true;
-
+        break;
     default:
         HAL_ERROR1("Illegal ICM20948 accel lpf %d\n", lpf);
         return false;
     }
+    return true;
 }
 
 
 bool RTIMUICM20948::setCompassRate(int rate)
 {
-    if ((rate < ICM20948_COMPASSRATE_MIN) || (rate > ICM20948_COMPASSRATE_MAX)) {
-        HAL_ERROR1("Illegal compass rate %d\n", rate);
+    switch (rate)
+    {
+    case 10:
+        m_compassRate = 0x02;
+        break;
+    case 20:
+        m_compassRate = 0x04;
+        break;
+    case 50:
+        m_compassRate = 0x06;
+        break;
+    case 100:
+        m_compassRate = 0x8;
+        break;
+    
+    default:
+        HAL_ERROR1("Illegal ICM20948 compas sample rate %d\n", rate);
         return false;
     }
-    m_compassRate = rate;
     return true;
 }
 
 bool RTIMUICM20948::setGyroFsr(unsigned char fsr)
 {
     switch (fsr) {
-    case ICM20648_GYRO_FULLSCALE_250DPS:
+    case ICM20948_GYRO_FULLSCALE_250DPS:
         m_gyroFsr = fsr;
         m_gyroScale = RTMATH_PI / (131.0 * 180.0);
         return true;
 
-    case ICM20648_GYRO_FULLSCALE_500DPS:
+    case ICM20948_GYRO_FULLSCALE_500DPS:
         m_gyroFsr = fsr;
-        m_gyroScale = RTMATH_PI / (62.5 * 180.0);
+        m_gyroScale = RTMATH_PI / (65.5 * 180.0);
         return true;
 
-    case ICM20648_GYRO_FULLSCALE_1000DPS:
+    case ICM20948_GYRO_FULLSCALE_1000DPS:
         m_gyroFsr = fsr;
         m_gyroScale = RTMATH_PI / (32.8 * 180.0);
         return true;
 
-    case ICM20648_GYRO_FULLSCALE_2000DPS:
+    case ICM20948_GYRO_FULLSCALE_2000DPS:
         m_gyroFsr = fsr;
         m_gyroScale = RTMATH_PI / (16.4 * 180.0);
         return true;
@@ -360,22 +356,22 @@ bool RTIMUICM20948::setGyroFsr(unsigned char fsr)
 bool RTIMUICM20948::setAccelFsr(unsigned char fsr)
 {
     switch (fsr) {
-    case ICM20648_ACCEL_FULLSCALE_2G:
+    case ICM20948_ACCEL_FULLSCALE_2G:
         m_accelFsr = fsr;
         m_accelScale = 1.0/16384.0;
         return true;
 
-    case ICM20648_ACCEL_FULLSCALE_4G:
+    case ICM20948_ACCEL_FULLSCALE_4G:
         m_accelFsr = fsr;
         m_accelScale = 1.0/8192.0;
         return true;
 
-    case ICM20648_ACCEL_FULLSCALE_8G:
+    case ICM20948_ACCEL_FULLSCALE_8G:
         m_accelFsr = fsr;
         m_accelScale = 1.0/4096.0;
         return true;
 
-    case ICM20648_ACCEL_FULLSCALE_16G:
+    case ICM20948_ACCEL_FULLSCALE_16G:
         m_accelFsr = fsr;
         m_accelScale = 1.0/2048.0;
         return true;
@@ -408,89 +404,66 @@ bool RTIMUICM20948::resetFifo()
 
 bool RTIMUICM20948::setGyroConfig()
 {
+    if (!(m_gyroLpf & ICM20948_BIT_GYRO_FCHOICE))
+    {
+        HAL_ERROR1("Cannot calculate gyro sampleDivider rate  with current LPF 0x%02X\n",m_gyroLpf)
+        return false;
+    }
+
     unsigned char gyroConfig = m_gyroFsr | m_gyroLpf;
 
-    HAL_INFO1("Set GYRO_CONFIG_1 to 0x%x\n",gyroConfig)
+    HAL_INFO1("Set GYRO_CONFIG_1 to 0x%02X\n",gyroConfig)
 
     if (!HALWrite(m_slaveAddr, ICM20948_REG_GYRO_CONFIG_1, gyroConfig, "Failed to write gyro config"))
          return false;
+
+    float gyroSampleDivider = (1125.0 / m_sampleRate) - 1.0;
+    if (gyroSampleDivider > 255)
+    {
+        HAL_ERROR1("gyro sampleDivider out of range %f\n",gyroSampleDivider)
+        return false;
+    }
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_GYRO_SMPLRT_DIV, (unsigned char)gyroSampleDivider, "Failed to write gyro SMPLRT_DIV"))
+         return false;
+
 
     return true;
 }
 
 bool RTIMUICM20948::setAccelConfig()
 {
+    if (!(m_accelLpf & ICM20948_BIT_ACCEL_FCHOICE))
+    {
+        HAL_ERROR1("Cannot calculate acc sampleDivider rate with current LPF 0x%02X\n",m_accelLpf)
+        return false;
+    }
+
     unsigned char accelConfig = m_accelFsr | m_accelLpf;
-    HAL_INFO3("Set ACCEL_CONFIG to 0x%x (FS: 0x%x, LPF: 0x%x)\n",accelConfig,m_accelFsr,m_accelLpf);
+    HAL_INFO3("Set ACCEL_CONFIG to 0x%x (FS: 0x%x, LPF: 0x%02X)\n",accelConfig,m_accelFsr,m_accelLpf);
 
     if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_CONFIG, accelConfig, "Failed to write accel config"))
          return false;
 
-    return true;
-}
-
-bool RTIMUICM20948::setSampleRate()
-{
-    uint8_t gyroDiv;
-    float gyroSampleRate;
-
-    /* Calculate the sample rate divider */
-    gyroSampleRate = (1125.0 / m_sampleRate) - 1.0;
-
-    /* Check if it fits in the divider register */
-    if ( gyroSampleRate > 255.0 ) {
-        gyroSampleRate = 255.0;
-    }
-
-    if ( gyroSampleRate < 0 ) {
-        gyroSampleRate = 0.0;
-    }
-
-    /* Write the value to the register */
-    gyroDiv = (uint8_t) gyroSampleRate;
-    
-    HAL_INFO1("Set GYRO_SMPLRT_DIV to 0x%x\n",gyroDiv)
-  
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_GYRO_SMPLRT_DIV, gyroDiv, "Failed to set gyro sample rate"))
+    float accSampleDivider = (1125.0 / m_sampleRate) - 1.0;
+    if (accSampleDivider > 4095)
+    {
+        HAL_ERROR1("acc sampleDivider out of range 0x%f\n",accSampleDivider)
         return false;
-
-
-    //Accel
-    uint16_t accelDiv;
-    float accelSampleRate;
-
-    /* Calculate the sample rate divider */
-    accelSampleRate = (1125.0 / m_sampleRate) - 1.0;
-
-    /* Check if it fits in the divider registers */
-    if ( accelSampleRate > 4095.0 ) {
-        accelSampleRate = 4095.0;
     }
+    uint16_t divider = accSampleDivider;
 
-    if ( accelSampleRate < 0 ) {
-        accelSampleRate = 0.0;
-    }
-
-    /* Write the value to the registers */
-    accelDiv = (uint16_t) accelSampleRate;
-    HAL_INFO1("Set ACCEL_SMPLRT_DIV to 0x%x\n",accelDiv)
-   if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_1, (uint8_t) (accelDiv >> 8), "Failed to set MSB accel sample rate"))
-        return false;
-   if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_2, (uint8_t) (accelDiv & 0xFF), "Failed to set LSB accel sample rate"))
-        return false;
-
+    HAL_INFO2("Set ACCEL_SMPL to 0x%04x Scale: %f )\n",divider,m_accelScale);
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_1, (unsigned char)(divider >> 8), "Failed to write acc SMPLRT_DIV"))
+         return false;
+    if (!HALWrite(m_slaveAddr, ICM20948_REG_ACCEL_SMPLRT_DIV_2, (unsigned char)(divider & 0xFF), "Failed to write acc SMPLRT_DIV"))
+         return false;
     return true;
 }
 
 int RTIMUICM20948::IMUGetPollInterval()
 {
-    if (m_sampleRate > 400)
-        return 1;
-    else
-        return (400 / m_sampleRate);
+    return (400 / m_sampleRate);
 }
-
-
 
 bool RTIMUICM20948::IMURead()
 {
@@ -598,7 +571,13 @@ bool RTIMUICM20948::IMURead()
 
     RTMath::convertToVector(fifoData, m_imuData.accel, m_accelScale, true);
     RTMath::convertToVector(fifoData + 6, m_imuData.gyro, m_gyroScale, true);
-    RTMath::convertToVector(compassData + 1, m_imuData.compass, 0.6f, false);
+    RTMath::convertToVector(compassData + 1, m_imuData.compass, 0.15f, false);
+
+//    printf("Accel: %5.2f %5.2f %5.2f\n",m_imuData.accel.x(),m_imuData.accel.y(),m_imuData.accel.z());
+    // ,((int16_t)((fifoData[2]<<8)|(uint16_t)fifoData[3]))*m_accelScale
+    // ,((int16_t)((fifoData[4]<<8)|(uint16_t)fifoData[5]))*m_accelScale);
+    // printf("Accel: %5d %5d %5d\n",(int16_t)((fifoData[0]<<8)|fifoData[1])
+    // ,(int16_t)((fifoData[2]<<8)|fifoData[3]),(int16_t)((fifoData[4]<<8)|fifoData[5]));
 
     //  sort out gyro axes
 
@@ -610,19 +589,15 @@ bool RTIMUICM20948::IMURead()
 
     m_imuData.accel.setX(-m_imuData.accel.x());
 
-    //  use the compass fuse data adjustments
-
-    m_imuData.compass.setX(m_imuData.compass.x() * m_compassAdjust[0]);
-    m_imuData.compass.setY(m_imuData.compass.y() * m_compassAdjust[1]);
-    m_imuData.compass.setZ(m_imuData.compass.z() * m_compassAdjust[2]);
-
     //  sort out compass axes
 
-    float temp;
+    // float temp;
 
-    temp = m_imuData.compass.x();
-    m_imuData.compass.setX(m_imuData.compass.y());
-    m_imuData.compass.setY(-temp);
+    // temp = m_imuData.compass.x();
+    // m_imuData.compass.setX(m_imuData.compass.y());
+    // m_imuData.compass.setY(-temp);
+    m_imuData.compass.setY(-m_imuData.compass.y());
+    //m_imuData.compass.setZ(-m_imuData.compass.z());
 
     //  now do standard processing
 
@@ -657,7 +632,7 @@ bool RTIMUICM20948::compassSetup() {
             return false;
         }
 
-        if (!m_settings->HALWrite(AK09916_ADDRESS, REG_AK09916_CNTL2, 0x04, "Failed to set compass in mode 2")) {
+        if (!m_settings->HALWrite(AK09916_ADDRESS, REG_AK09916_CNTL2, m_compassRate, "Failed to set compass in mode 2")) {
             bypassOff();
             return false;
         }
@@ -681,11 +656,6 @@ bool RTIMUICM20948::compassSetup() {
             m_settings->delayMs(20);
         }
         {//verify compass device ID
-unsigned char cntrs;
-        if (!HALRead(m_slaveAddr, ICM20948_REG_USER_CTRL, 1, &cntrs, "Failed to read compasMode")) return false;
-HAL_INFO1("USER_CNTL: %02Xh\n",cntrs);
-
-
             const uint8_t len=1;
             if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_ADDR, ICM20948_INV_MPU_BIT_I2C_READ | AK09916_ADDRESS, "Failed to set slave 0 address")) return false;
             if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_WIA2, "Failed to set slave 0 reg")) return false;
@@ -699,17 +669,8 @@ HAL_INFO1("USER_CNTL: %02Xh\n",cntrs);
                 HAL_ERROR2("Invalid magnetometer ID, expected %Xh but was %Xh\n",AK09916_WIA2_ID,wia);
                 return false;
             }
-            else
-            {
-                HAL_INFO("Magnetometer deviceID as expected\n");
-            }
         }
     }
-    //  both interfaces
-
-    m_compassAdjust[0] = 1.0f;
-    m_compassAdjust[1] = 1.0f;
-    m_compassAdjust[2] = 1.0f;
 
     {//Configure Magnetometer output
         if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV1_ADDR, AK09916_ADDRESS, "Failed to set slave 0 address")) return false;
@@ -751,39 +712,13 @@ HAL_INFO1("USER_CNTL: %02Xh\n",cntrs);
         if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_REG, REG_AK09916_STATUS1, "Failed to set slave 0 reg")) return false;
         if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV0_CTRL, ICM20948_INV_MPU_BIT_SLV_EN | len, "Failed to set slave 0 ctrl")) return false;
 
-//for (size_t i = 0; i < 10; i++)
-//while (true)
-{
-
         m_settings->delayMs(30);
 
         //verify single sample
         unsigned char compMeas[9];
         if (!HALRead(m_slaveAddr, ICM20948_REG_EXT_SLV_SENS_DATA_00, 9, compMeas, "Failed to set slave 0 ctrl")) return false;
-/*        HAL_INFO2("Compass Status 1: %Xh - 2: %Xh\n",compMeas[0],compMeas[8]);
-        HAL_INFO3("Compass Data X: %d Y: %X Z: %d\n", (compMeas[2]<<8) | compMeas[1]
-                                                    , (compMeas[4]<<8) | compMeas[3]
-                                                    , (compMeas[6]<<8) | compMeas[5]);*/
-        HAL_INFO2("Compass ST1/ST2:          0x%02X %02X\n",compMeas[0],compMeas[8]);
-        HAL_INFO2("Compass HX: 0x%02X %02X\n",compMeas[2],compMeas[1]);
-        HAL_INFO2("Compass HY: 0x%02X %02X\n",compMeas[4],compMeas[3]);
-        HAL_INFO2("Compass HZ: 0x%02X %02X\n",compMeas[6],compMeas[5]);
-}
     }
 
-    return true;
-}
-
-bool RTIMUICM20948::setCompassRate()
-{
-    int rate;
-
-    rate = m_sampleRate / m_compassRate - 1;
-
-    if (rate > 31)
-        rate = 31;
-    if (!HALWrite(m_slaveAddr, ICM20948_REG_I2C_SLV4_CTRL, rate, "Failed to set slave ctrl 4"))
-         return false;
     return true;
 }
 

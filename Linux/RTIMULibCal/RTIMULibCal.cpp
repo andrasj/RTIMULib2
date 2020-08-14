@@ -41,7 +41,6 @@
 void doMagMinMaxCal();
 void doMagEllipsoidCal();
 void processEllipsoid();
-void doTest();
 void doAccelCal();
 void newIMU();
 bool pollIMU();
@@ -78,8 +77,6 @@ int main(int argc, char **argv)
     bool mustExit = false;
     imu = NULL;
     newIMU();
-
-//    return 0;
 
     //  set up for calibration run
 
@@ -118,10 +115,6 @@ int main(int argc, char **argv)
 
         case 'a' :
             doAccelCal();
-            break;
-
-        case 't' :
-            doTest();
             break;
         }
     }
@@ -389,64 +382,6 @@ void doAccelCal()
     }
 }
 
-void doTest()
-{
-    uint64_t displayTimer;
-    uint64_t now;
-    char input;
-
-    printf("\n\nTest current settings\n");
-    printf("-------------------------\n");
-    printf("  x - abort.\n");
-    printf("\nPress any key to start...");
-    getchar();
-
-    //  perform all axis reset
-    displayTimer = RTMath::currentUSecsSinceEpoch();
-
-    while (1) {
-        //  poll at the rate recommended by the IMU
-
-        usleep(imu->IMUGetPollInterval() * 1000);
-
-        while (pollIMU()) {
-
-            now = RTMath::currentUSecsSinceEpoch();
-
-            //  display 10 times per second
-
-            if ((now - displayTimer) > 100000) {
-                /*
-                                fusionPose = data["fusionPose"]
-                IMUStatus = data["fusionPoseValid"]
-                gyro = data["gyro"]
-                #yaw = math.degrees(fusionPose[2])-90  ## this is in to match BNO on my mounting box.
-                yaw = round(math.degrees(fusionPose[2]),2)
-                if(yaw < 0):
-                   heading = yaw+360
-                if (yaw >= 0):
-                    heading = yaw
-                roll = math.degrees(fusionPose[0])
-                pitch = math.degrees(fusionPose[1])
-                */
-                printf("valid: %d yaw: %4.1f roll: %4.1f pitch: %4.1f\n",imuData.fusionPoseValid
-                                                              ,imuData.fusionPose.z() * 180.0 / 3.14
-                                                              ,imuData.fusionPose.x() * 180.0 / 3.14
-                                                              ,imuData.fusionPose.y() * 180.0 / 3.14);
-                displayTimer = now;
-            }
-        }
-
-        if ((input = getUserChar()) != 0) {
-            switch (input) {
-
-            case 'x' :
-                printf("\nAborting.\n");
-                return;
-            }
-        }
-    }
-}
 
 bool pollIMU()
 {
@@ -472,7 +407,6 @@ void displayMenu()
 {
     printf("\n");
     printf("Options are: \n\n");
-    printf("  t - test\n");
     printf("  m - calibrate magnetometer with min/max\n");
     printf("  e - calibrate magnetometer with ellipsoid (do min/max first)\n");
     printf("  a - calibrate accelerometers\n");

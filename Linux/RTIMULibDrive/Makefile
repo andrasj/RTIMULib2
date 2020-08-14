@@ -25,13 +25,13 @@
 
 RTIMULIBPATH  = ../../RTIMULib
 
-CC    			= gcc
-CXX   			= g++
+CC    			= arm-linux-gnueabihf-gcc --sysroot=~/projects/reach/base/
+CXX   			= arm-linux-gnueabihf-g++ --sysroot=~/projects/reach/base/
 DEFINES       	=
 CFLAGS			= -pipe -O2 -Wall -W $(DEFINES)
 CXXFLAGS      	= -pipe -O2 -Wall -W $(DEFINES)
 INCPATH       	= -I. -I$(RTIMULIBPATH)
-LINK  			= g++
+LINK  			= arm-linux-gnueabihf-g++ --sysroot=~/projects/reach/base/
 LFLAGS			= -Wl,-O1
 LIBS  			= -L/usr/lib/arm-linux-gnueabihf
 COPY  			= cp -f
